@@ -64,7 +64,7 @@ jobs:
           xcodebuild -version
           python3 - <<'PY'
           import re, subprocess
-          match = re.search(r"Xcode (\\d+)", subprocess.check_output(["xcodebuild", "-version"], text=True))
+          match = re.search(r"Xcode ([0-9]+)", subprocess.check_output(["xcodebuild", "-version"], text=True))
           if not match or int(match.group(1)) < 26:
               raise SystemExit("Xcode 26 or newer required")
           PY
