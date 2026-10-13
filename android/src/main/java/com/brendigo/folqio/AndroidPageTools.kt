@@ -12,6 +12,7 @@ import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
+import kotlin.math.min
 
 /**
  * PdfRenderer is read-only on Android 26+. These page-copy operations intentionally
