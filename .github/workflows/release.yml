@@ -1,0 +1,33 @@
+name: Android release candidate
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  publish-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Test and package
+        run: gradle :android:testDebugUnitTest :android:assembleDebug
+      - name: Create GitHub pre-release after tests pass
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" android/build/outputs/apk/debug/*.apk \
+            --title "Folqio ${GITHUB_REF_NAME} (development build)" \
+            --prerelease \
+            --notes "Android debug-signed development build. Not production signed. iOS source is included in the repository; iOS distribution requires Apple signing."

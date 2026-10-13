@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.Folqio" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#0B1321</item>
+        <item name="android:navigationBarColor">#0B1321</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+</resources>
