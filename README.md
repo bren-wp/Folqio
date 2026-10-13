@@ -55,11 +55,11 @@ Both editions share Folqio's visual identity but use the strengths of their resp
 
 **iPhone and iPad** add PDFKit text search, note and highlight annotations, multi-page document-camera scanning, on-device OCR, and page operations that retain PDF content.
 
-**Important:** Main navigation and settings have translations; some other screens still appear in English. Android's extracted, rotated, and merged PDF copies are rasterized. Those operations do not preserve searchable text, forms, or signatures and must not be treated as secure redaction. Some advanced PDF editing features remain on the roadmap.
+**Please note:** Android's extracted, rotated, and merged PDF copies are rasterized. Those operations do not preserve searchable text, forms, or signatures and must not be treated as secure redaction. Some advanced PDF editing features remain on the roadmap.
 
 ## Discover Folqio
 
-Explore the [latest downloads and release notes](https://github.com/bren-wp/Folqio/releases), learn about our [privacy and security design](docs/SECURITY.md), or see the [full feature roadmap](docs/ROADMAP.md).
+Explore the [latest downloads and release notes](https://github.com/bren-wp/Folqio/releases), learn about our [Privacy Policy](docs/PRIVACY_POLICY.md) and [Terms of Use](docs/TERMS_OF_USE.md), or see the [full feature roadmap](docs/ROADMAP.md).
 
 Built with care by **Brendigo**. Explore the release notes for the most up-to-date availability on each platform.
 
