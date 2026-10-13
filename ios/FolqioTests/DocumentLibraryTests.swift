@@ -53,6 +53,15 @@ final class DocumentToolsTests: XCTestCase {
         XCTAssertThrowsError(try DocumentTools.extract(makePDF(pages: 2), indices: [2]))
     }
 
+    func testDeleteKeepsOriginalUnchanged() throws {
+        let original = makePDF(pages: 3)
+        let otherCopy = makePDF(pages: 3)
+        let edited = try DocumentTools.deletedCopy(otherCopy, index: 1)
+        XCTAssertEqual(edited.pageCount, 2)
+        XCTAssertEqual(original.pageCount, 3)
+        XCTAssertThrowsError(try DocumentTools.deletedCopy(makePDF(pages: 1), index: 0))
+    }
+
     func testRotateAndReorder() throws {
         let pdf = makePDF(pages: 3)
         let rotated = try DocumentTools.rotatedCopy(pdf, index: 0)
