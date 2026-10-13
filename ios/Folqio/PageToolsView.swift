@@ -11,7 +11,7 @@ struct PageToolsView: View {
     @State private var pageIndex = 0
     @State private var error: String?
 
-    private var document: PDFDocument? { PDFDocument(url: library.localURL(for: item)) }
+    @State private var document: PDFDocument?
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
 
     var body: some View {
@@ -81,6 +81,7 @@ struct PageToolsView: View {
             } message: { Text(error ?? "") }
         }
         .tint(FolqioColors.mint)
+        .onAppear { document = PDFDocument(url: library.localURL(for: item)) }
     }
 
     private func actionButton(_ title: String, icon: String,
@@ -88,7 +89,7 @@ struct PageToolsView: View {
         Button {
             do {
                 guard let source = document else { throw PDFToolError.invalidDocument }
-                let result = try edit(source)
+                let result = try edit(PDFDocument(url: library.localURL(for: item)) ?? source)
                 let created = try library.createPDF(result, named: title + " - " + item.filename)
                 onCreated(created)
                 dismiss()
