@@ -14,6 +14,8 @@ Folqio is a privacy-oriented, offline-first document app with separately impleme
 | Page navigation and zoom | Yes | Yes |
 | Local document library / name search | Recent PDFs | Copied into private app storage |
 | Favorites | Yes | Yes |
+| Rename library display label | Yes | Yes |
+| Open encrypted PDF with password | Not yet | Yes; entered locally and not persisted |
 | Page bookmarks | Yes | No |
 | PDF full-text search | No | Yes |
 | PDF annotations | No | Text notes; highlight first search result |
@@ -29,7 +31,7 @@ Folqio is a privacy-oriented, offline-first document app with separately impleme
 - Android's current PDF engine is read-only. Its export operations create **rasterized** page copies; they do not preserve searchable text, forms or native annotations. Do not use those operations as secure redaction.
 - Android camera capture does not yet replicate the reference scanner's edge correction, multi-page capture and filters.
 - iOS PDF page operations retain PDF content rather than rendering to a bitmap, but complex PDF fidelity and forms require a broader compatibility test suite.
-- No OCR, encryption vault, text reflow, direct editing of original PDF text, password protection, verified redaction, undo/redo editor, or signing workflow has been shipped yet.
+- No OCR, encryption vault, text reflow, direct editing of original PDF text, creating password-protected PDFs, verified redaction, undo/redo editor, or signing workflow has been shipped yet.
 - Full 1:1 visual matching to prior image renders requires real-device screenshots and audited interaction states. Current screens follow the same brand rather than claiming pixel-level equivalence.
 
 ## Development

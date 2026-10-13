@@ -6,7 +6,7 @@
 - Android document picker obtains user-selected read grants; optional camera capture invokes the **system camera** rather than requiring Folqio camera permission.
 - Android created PDFs and camera photos are written to app-private `filesDir` and exposed to other applications only by the explicit `FileProvider` content URI flow.
 - Android recent PDF references/favorites are stored in private preferences. Content provider grants may be revoked after external documents move or providers reset.
-- iOS PDFs are imported to app-private Application Support with backup exclusions and file protection, subject to OS/device policy.
+- iOS PDFs are imported to app-private Application Support with backup exclusions and file protection, subject to OS/device policy. Passwords used to unlock encrypted PDF files are not stored in the library.
 - iOS VisionKit scanner and system Photos picker use platform UI. The OS may optionally obtain photos from device-synced sources, but **Folqio does not upload their contents to its own backend**.
 - PDF rendering is handled locally by Android PdfRenderer and Apple PDFKit.
 - Exports and share sheets are user-initiated.

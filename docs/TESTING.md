@@ -6,7 +6,7 @@ Use personal test documents with no real sensitive information. Test on physical
 
 1. Launch with no files: verify empty state, no demo PDFs, no account.
 2. Open a multi-page PDF from Files; navigate and zoom, return and reopen.
-3. Mark current PDF as favorite, switch tabs, search its filename.
+3. Mark current PDF as favorite, switch tabs, rename its display label, search its filename.
 4. Tap Scan and take a photo with the **system camera**; verify that a one-page PDF opens.
 5. Tap Photo and choose an image; verify a separate PDF is saved locally.
 6. Extract and rotate page copies; verify the new PDF opens, and disclosure says **flattened**.
@@ -23,8 +23,8 @@ Use personal test documents with no real sensitive information. Test on physical
 5. Choose Photo from Photos picker; verify it becomes a local PDF.
 6. Select 2+ library PDFs in Merge, verify total pages and originals.
 7. Page tools: select a page, rotate, move and extract as **new copies**.
-8. Toggle favorite, switch Home/Files/Favorites tabs and filter names.
-9. Attempt unsupported/corrupted inputs; verify clear error messages.
+8. Toggle favorite, rename display label, switch Home/Files/Favorites tabs and filter names.
+9. Open an encrypted PDF with correct and incorrect passwords; verify cancel, unlock and no saved password. Attempt unsupported/corrupted inputs; verify clear error messages.
 10. Test with the phone offline and verify no application-hosted document upload.
 
 ## Known gaps
