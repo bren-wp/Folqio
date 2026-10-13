@@ -105,20 +105,35 @@ object PhotoPdfTools {
     }
 
     private fun orientBitmap(context: Context, uri: Uri, image: Bitmap): Bitmap {
-        val rotation = runCatching {
+        val orientation = runCatching {
             context.contentResolver.openInputStream(uri)?.use { stream ->
-                when (ExifInterface(stream).getAttributeInt(
+                ExifInterface(stream).getAttributeInt(
                     ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL
-                )) {
-                    ExifInterface.ORIENTATION_ROTATE_90 -> 90f
-                    ExifInterface.ORIENTATION_ROTATE_180 -> 180f
-                    ExifInterface.ORIENTATION_ROTATE_270 -> 270f
-                    else -> 0f
-                }
-            } ?: 0f
-        }.getOrDefault(0f)
-        if (rotation == 0f) return image
-        val matrix = Matrix().apply { postRotate(rotation) }
+                )
+            } ?: ExifInterface.ORIENTATION_NORMAL
+        }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
+        if (orientation == ExifInterface.ORIENTATION_NORMAL ||
+            orientation == ExifInterface.ORIENTATION_UNDEFINED) return image
+
+        // Respect mirrored EXIF orientations; camera and scanned photos may
+        // legitimately contain any of the eight standard orientation values.
+        val matrix = Matrix()
+        when (orientation) {
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
+            ExifInterface.ORIENTATION_TRANSPOSE -> {
+                matrix.postRotate(90f)
+                matrix.postScale(-1f, 1f)
+            }
+            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+            ExifInterface.ORIENTATION_TRANSVERSE -> {
+                matrix.postRotate(90f)
+                matrix.postScale(1f, -1f)
+            }
+            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+            else -> return image
+        }
         return Bitmap.createBitmap(image, 0, 0, image.width, image.height, matrix, true)
     }
 }

@@ -1,10 +1,8 @@
 package com.brendigo.folqio
 
 import android.content.Intent
-import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
-import android.provider.OpenableColumns
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -85,25 +83,34 @@ private fun FolqioApp(initialUri: Uri?) {
     var current by remember { mutableStateOf<LocalPdf?>(null) }
     var importError by remember { mutableStateOf<String?>(null) }
     var creating by remember { mutableStateOf(false) }
+    var importing by remember { mutableStateOf(false) }
     var merging by remember { mutableStateOf(false) }
     var favoriteRevision by remember { mutableIntStateOf(0) }
     var pendingCapture by rememberSaveable { mutableStateOf<String?>(null) }
 
     fun open(uri: Uri) {
         if (uri.scheme != "content") {
-            importError = "Use the system file picker to open this PDF."
+            importError = "Choose a PDF using the document picker."
             return
         }
-        val displayName = runCatching {
-            context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor: Cursor ->
-                if (cursor.moveToFirst()) cursor.getString(0) else null
+        scope.launch {
+            importing = true
+            importError = null
+            try {
+                val file = withContext(Dispatchers.IO) {
+                    PdfImportTools.import(context.applicationContext, uri)
+                }
+                library.add(file)
+                recent = library.recent()
+                current = file
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                importError = "Couldn't open this PDF: ${failure.localizedMessage ?: "select another document"}"
+            } finally {
+                importing = false
             }
-        }.getOrNull()?.take(160) ?: "Document.pdf"
-        val file = LocalPdf(uri.toString(), displayName)
-        library.add(file)
-        recent = library.recent()
-        current = file
-        importError = null
+        }
     }
 
     fun createFromImages(uris: List<Uri>) {
@@ -157,11 +164,6 @@ private fun FolqioApp(initialUri: Uri?) {
 
     val pdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            try {
-                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } catch (_: SecurityException) {
-                // Some providers supply only temporary read access.
-            }
             open(uri)
         }
     }
@@ -175,15 +177,6 @@ private fun FolqioApp(initialUri: Uri?) {
             if (!MergePolicy.validFiles(sources.size)) {
                 importError = "Select two to five PDF files."
             } else {
-                sources.forEach { uri ->
-                    try {
-                        context.contentResolver.takePersistableUriPermission(
-                            uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        )
-                    } catch (_: SecurityException) {
-                        // Some providers do not offer persistable access.
-                    }
-                }
                 scope.launch {
                     merging = true
                     importError = null
@@ -272,7 +265,7 @@ private fun FolqioApp(initialUri: Uri?) {
                         if (changed) recent = library.recent()
                         changed
                     },
-                    busy = creating || merging || exportingZip,
+                    busy = creating || merging || importing || exportingZip,
                     error = importError,
                     notice = zipResult
                 )
