@@ -42,6 +42,13 @@ enum DocumentTools {
         return result
     }
 
+    static func deletedCopy(_ source: PDFDocument, index: Int) throws -> PDFDocument {
+        guard source.pageCount > 1, index >= 0, index < source.pageCount
+        else { throw PDFToolError.invalidPages }
+        source.removePage(at: index)
+        return source
+    }
+
     static func rotatedCopy(_ source: PDFDocument, index: Int) throws -> PDFDocument {
         guard let page = source.page(at: index) else { throw PDFToolError.invalidPages }
         page.rotation = (page.rotation + 90) % 360
