@@ -12,7 +12,10 @@ struct HomeView: View {
     @State private var selectedDocument: DocumentItem?
     @State private var query = ""
     @State private var importError: String?
-    @State private var showPrivacy = false
+    @State private var showSettings = false
+    @State private var pendingRemoval: DocumentItem?
+    @AppStorage("folqio_language") private var language = "en"
+    @AppStorage("folqio_confirm_deletion") private var confirmDeletion = true
     @State private var renameItem: DocumentItem?
     @State private var showingScanner = false
     @State private var showingMerge = false
@@ -25,6 +28,10 @@ struct HomeView: View {
             (!(onlyFavorites || section == .favorites) || $0.isFavorite) &&
             (query.isEmpty || $0.filename.localizedCaseInsensitiveContains(query))
         }
+    }
+
+    private func tr(_ key: String) -> String {
+        FolqioLanguages.text(key, language: language)
     }
 
     var body: some View {
@@ -44,12 +51,12 @@ struct HomeView: View {
                                     .foregroundStyle(FolqioColors.muted)
                             }
                             Spacer()
-                            Button { showPrivacy = true } label: {
+                            Button { showSettings = true } label: {
                                 Image(systemName: "shield.lefthalf.filled")
                                     .font(.title2)
                                     .foregroundStyle(FolqioColors.mint)
                             }
-                            .accessibilityLabel("Privacy information")
+                            .accessibilityLabel(tr("settings"))
                         }
                         .padding(.top, 22)
 
@@ -84,7 +91,7 @@ struct HomeView: View {
                                 .foregroundStyle(FolqioColors.pearl)
                             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 10) {
                                 Button { isImporterPresented = true } label: {
-                                    QuickAction(title: "Open", symbol: "folder")
+                                    QuickAction(title: tr("open"), symbol: "folder")
                                 }
                                 Button {
                                     if VNDocumentCameraViewController.isSupported {
@@ -93,15 +100,15 @@ struct HomeView: View {
                                         importError = "Document scanning requires a camera-enabled iPhone or iPad."
                                     }
                                 } label: {
-                                    QuickAction(title: "Scan", symbol: "camera.viewfinder")
+                                    QuickAction(title: tr("scan"), symbol: "camera.viewfinder")
                                 }
                                 PhotosPicker(selection: $selectedPhotos,
                                              maxSelectionCount: PhotoPDFBuilder.maximumPhotos,
                                              matching: .images) {
-                                    QuickAction(title: "Photo", symbol: "photo")
+                                    QuickAction(title: tr("photos"), symbol: "photo")
                                 }
                                 Button { showingMerge = true } label: {
-                                    QuickAction(title: "Merge", symbol: "square.on.square")
+                                    QuickAction(title: tr("merge"), symbol: "square.on.square")
                                 }
                                 .disabled(library.documents.count < 2)
                             }
@@ -121,7 +128,7 @@ struct HomeView: View {
                         .font(.subheadline.weight(.medium))
 
                         HStack {
-                            Text(section == .favorites ? "Favorites" : section == .files ? "Documents" : "Recent files")
+                            Text(section == .favorites ? tr("favorites") : section == .files ? tr("files") : tr("recent"))
                                 .font(.title2.bold())
                                 .foregroundStyle(FolqioColors.pearl)
                             Spacer()
@@ -180,7 +187,11 @@ struct HomeView: View {
                                     Label("Share copy", systemImage: "square.and.arrow.up")
                                 }
                                 Button("Remove document", systemImage: "trash", role: .destructive) {
-                                    library.remove(document)
+                                    if confirmDeletion {
+                                        pendingRemoval = document
+                                    } else if !library.remove(document) {
+                                        importError = "The document could not be removed."
+                                    }
                                 }
                             }
                         }
@@ -261,9 +272,22 @@ struct HomeView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showPrivacy) {
-                PrivacyView()
-                    .presentationDetents([.medium])
+            .sheet(isPresented: $showSettings) {
+                FolqioSettingsView().environmentObject(library)
+            }
+            .confirmationDialog("Remove document?", isPresented: Binding(
+                get: { pendingRemoval != nil },
+                set: { if !$0 { pendingRemoval = nil } }
+            )) {
+                Button("Remove", role: .destructive) {
+                    if let item = pendingRemoval, !library.remove(item) {
+                        importError = "The document could not be removed."
+                    }
+                    pendingRemoval = nil
+                }
+                Button("Cancel", role: .cancel) { pendingRemoval = nil }
+            } message: {
+                Text("Documents saved in Folqio are deleted. Imported originals remain untouched.")
             }
         }
         .tint(FolqioColors.mint)
@@ -271,51 +295,32 @@ struct HomeView: View {
 
     private var bottomNavigation: some View {
         HStack(spacing: 2) {
-            BottomNavigationItem(title: "Home", symbol: "house.fill", active: section == .home) {
+            BottomNavigationItem(title: tr("home"), symbol: "house.fill", active: section == .home) {
                 section = .home
                 onlyFavorites = false
             }
-            BottomNavigationItem(title: "Files", symbol: "folder", active: section == .files) {
+            BottomNavigationItem(title: tr("files"), symbol: "folder", active: section == .files) {
                 section = .files
                 onlyFavorites = false
             }
-            BottomNavigationItem(title: "Scan", symbol: "camera", active: false) {
+            BottomNavigationItem(title: tr("scan"), symbol: "camera", active: false) {
                 if VNDocumentCameraViewController.isSupported {
                     showingScanner = true
                 } else {
                     importError = "Document scanning requires a camera-enabled iPhone or iPad."
                 }
             }
-            BottomNavigationItem(title: "Favorites", symbol: "star", active: section == .favorites) {
+            BottomNavigationItem(title: tr("favorites"), symbol: "star", active: section == .favorites) {
                 section = .favorites
                 onlyFavorites = true
             }
-            BottomNavigationItem(title: "Settings", symbol: "gearshape", active: false) {
-                showPrivacy = true
+            BottomNavigationItem(title: tr("settings"), symbol: "gearshape", active: false) {
+                showSettings = true
             }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(FolqioColors.slate)
-    }
-}
-
-private struct PrivacyView: View {
-    var body: some View {
-        ZStack {
-            FolqioColors.midnight.ignoresSafeArea()
-            VStack(alignment: .leading, spacing: 18) {
-                FolqioMark(size: 52)
-                Text("Privacy first")
-                    .font(.title.bold())
-                Label("Documents are copied into your app's local storage.", systemImage: "lock.doc")
-                Label("No analytics, tracking or account required.", systemImage: "hand.raised")
-                Label("Your PDFs are never uploaded by Folqio.", systemImage: "wifi.slash")
-                Spacer()
-            }
-            .foregroundStyle(FolqioColors.pearl)
-            .padding(28)
-        }
     }
 }
 

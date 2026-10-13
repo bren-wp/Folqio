@@ -38,3 +38,11 @@
 ## Release conditions
 
 **Code compilation is not device QA.** The repository's GitHub Actions verify basic builds and unit-test availability, not pixel parity or a full security audit. Never publish as a complete editor before functionality is real and tested. Keep release candidates clearly labeled development builds and do not present a debug APK as Play Store ready.
+
+## v0.1.5 settings and export
+
+- Persistent language setting: 25 languages including Croatian, for primary navigation and settings; review remaining screen translations before claiming full coverage.
+- User-adjustable last-page restoration and deletion confirmation on Android and iOS.
+- Select PDFs for ZIP export and save or share using operating-system interfaces.
+- Privacy policy, terms and Brendigo authorship included in the app.
+- ZIP file integrity, large inputs, and physical-device QA remain release gates.

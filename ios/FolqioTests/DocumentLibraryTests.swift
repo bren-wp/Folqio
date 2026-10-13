@@ -113,3 +113,31 @@ final class OfflineOCRPolicyTests: XCTestCase {
         XCTAssertFalse(OfflineOCR.canScanWholeDocument(26))
     }
 }
+
+@MainActor
+final class FolqioZipExporterTests: XCTestCase {
+    func testStoredZipContainsOriginalDocuments() throws {
+        let dir = FileManager.default.temporaryDirectory
+        let first = dir.appendingPathComponent(UUID().uuidString + ".pdf")
+        let second = dir.appendingPathComponent(UUID().uuidString + ".pdf")
+        try Data("%PDF-first".utf8).write(to: first)
+        try Data("%PDF-second".utf8).write(to: second)
+        defer {
+            try? FileManager.default.removeItem(at: first)
+            try? FileManager.default.removeItem(at: second)
+        }
+        let output = try FolqioZipExporter.export([(url: first, name: "Document.pdf"),
+                                                     (url: second, name: "Document.pdf")])
+        defer { try? FileManager.default.removeItem(at: output) }
+        let bytes = try Data(contentsOf: output)
+        XCTAssertEqual(Array(bytes.prefix(4)), [0x50, 0x4b, 0x03, 0x04])
+        XCTAssertTrue(bytes.range(of: Data("Document.pdf".utf8)) != nil)
+        XCTAssertTrue(bytes.range(of: Data("Document (2).pdf".utf8)) != nil)
+        XCTAssertEqual(Array(bytes.suffix(22).prefix(4)), [0x50, 0x4b, 0x05, 0x06])
+    }
+
+    func testSafeNamesCannotTraverseDirectories() {
+        XCTAssertEqual(FolqioZipExporter.safeName("../report.pdf"), "report.pdf")
+        XCTAssertEqual(FolqioZipExporter.safeName("report"), "report.pdf")
+    }
+}
