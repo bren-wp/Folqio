@@ -165,6 +165,11 @@ private fun FolqioApp(initialUri: Uri?) {
                         library.remove(removed)
                         recent = library.recent()
                     },
+                    onRename = { item, name ->
+                        val changed = library.renameLabel(item, name)
+                        if (changed) recent = library.recent()
+                        changed
+                    },
                     busy = creating,
                     error = importError
                 )
