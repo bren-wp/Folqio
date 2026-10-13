@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Article
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,6 +34,12 @@ internal fun FolqioSettingsScreen(
     var selection by remember { mutableStateOf<Set<String>>(emptySet()) }
     var legalPage by remember { mutableStateOf<String?>(null) }
     fun tr(key: String) = FolqioLanguages.text(language, key)
+    val context = LocalContext.current
+    val version = remember(context) {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull() ?: "—"
+    }
 
     if (selecting) {
         AlertDialog(
@@ -152,7 +159,7 @@ internal fun FolqioSettingsScreen(
                 }
                 HorizontalDivider(color = FolqioPalette.muted.copy(alpha = .2f))
                 Text("${tr("author")} Brendigo", color = FolqioPalette.pearl)
-                Text("Folqio · © 2026 Brendigo", color = FolqioPalette.muted,
+                Text("Folqio · v$version · © 2026 Brendigo", color = FolqioPalette.muted,
                     style = MaterialTheme.typography.bodySmall)
             }
         }
