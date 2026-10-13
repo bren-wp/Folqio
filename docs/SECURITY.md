@@ -1,27 +1,28 @@
-# Security and privacy architecture
+# Folqio privacy and security model
 
-## Privacy contract
+## Privacy commitments in the current implementation
 
-- No sign-in, ads, analytics SDK, external document API, or `INTERNET` permission on Android.
-- iOS imports only user-selected PDFs; files are copied into app-local Application Support.
-- Android uses the system document picker and persistable read URI grants; no broad storage permission.
-- Android recent-file metadata is stored in app-private preferences (without PDF contents).
-- iOS file copies are excluded from backup; file protection applies where supported.
-- Sharing happens only after the user explicitly invokes the system share sheet.
-- PDF renderers are platform frameworks: Android PdfRenderer and Apple's PDFKit; documents are not sent to a server.
-- Third-party build dependencies are version-pinned and packaged into the application, never loaded via CDN at runtime.
+- No account system, analytics, telemetry SDK, network PDF service or Android `INTERNET` permission.
+- Android document picker obtains user-selected read grants; optional camera capture invokes the **system camera** rather than requiring Folqio camera permission.
+- Android created PDFs and camera photos are written to app-private `filesDir` and exposed to other applications only by the explicit `FileProvider` content URI flow.
+- Android recent PDF references/favorites are stored in private preferences. Content provider grants may be revoked after external documents move or providers reset.
+- iOS PDFs are imported to app-private Application Support with backup exclusions and file protection, subject to OS/device policy.
+- iOS VisionKit scanner and system Photos picker use platform UI. The OS may optionally obtain photos from device-synced sources, but **Folqio does not upload their contents to its own backend**.
+- PDF rendering is handled locally by Android PdfRenderer and Apple PDFKit.
+- Exports and share sheets are user-initiated.
+- No runtime CDN. Gradle dependencies are fetched at **build time** and packaged into the APK; native iOS features use Apple frameworks.
 
-## Threat considerations
+## Threats and limitations
 
-- A PDF may be malformed or hostile. Parsing remains a potential native attack surface. Keep OS/framework patches current.
-- Android bitmap rendering is capped to 1200×3000 pixels to constrain memory usage; zoom scales the preview rather than allocating huge bitmaps.
-- An Android document provider may revoke permission. Failure is displayed to the user rather than silently dropping records.
-- The iOS file importer uses security-scoped URLs, copies selected PDFs into a private directory, and assigns generated filenames on disk.
-- Neither app claims that overlaid black rectangles constitute secure redaction. Redaction is not yet implemented.
-- OCR, signature verification, advanced editing, sanitization and attachment handling require separate, audited implementations.
+- PDFs and images are untrusted input. Platform parsers should be kept updated and fuzz/compatibility tested. A successful compile does not prove safety.
+- Android image decode downsamples inputs to bound typical output memory; PDF rendering is capped to 1200×3000 pixels.
+- Android exported PDF pages are rendered bitmaps: **not true redaction**, not full preservation of forms/text.
+- iOS PDFPage operations may have edge cases with tagged PDFs, signed/encrypted documents, embedded media or unusual forms; do not claim complete fidelity without tests.
+- iOS notes/highlights are written to the app's local copy. Preserve originals before destructive modifications.
+- No cryptographic document vault, password-reset flow, signing, OCR, secure redaction or malware sanitization is claimed yet.
+- Limit third-party libraries. Any new PDF engine needs a license audit, dependency/SBOM review, and security update strategy before adoption.
+- Neither platform uses an account, notifications, analytics, ads or push registration.
 
-## Release gates
+## Release gate
 
-Do not claim pixel-perfect parity or finished PDF editing until actual device QA validates those requirements.
-Never publish production app bundles without signing, static analysis, review of third-party licenses and tested backups/export behavior.
-Report vulnerabilities privately through the repository owner rather than public issue attachments containing sensitive documents.
+Do not mark pixel-perfect parity, encrypted storage guarantees, or safe permanent redaction as complete without real device/security testing and evidence. Android debug signing is for development and is not production signing.

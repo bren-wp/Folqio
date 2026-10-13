@@ -1,60 +1,62 @@
-# Folqio
+# FOLQIO — PDF Reader & Editor
 
 **Your documents. Your device.**
 
-Folqio is an offline-first PDF reading and document-management app developed independently for **Android (Kotlin + Jetpack Compose)** and **iOS (Swift + SwiftUI + PDFKit)**. Its visual system follows the dark navy, slate and mint Folqio brand.
+Folqio is a privacy-oriented, offline-first document app with separately implemented **Android (Kotlin/Jetpack Compose)** and **iOS (Swift/SwiftUI/PDFKit)** versions. The UI uses Folqio's navy, slate and mint visual language.
 
-> **Status: initial development foundation — not a production release.** This repository previously contained only a README and an MIT license. The code introduced here is the first functional baseline, not a claim that all concept screens or advanced editing features are complete.
+> **Status: native development preview, v0.1.0. Not production-ready.** All examples shown in previous concept renders are targets, not proof of implemented screens or pixel-perfect parity. There are no demo PDF files or user accounts in the app.
 
-## Implemented
+## Real functionality
 
 | Feature | Android | iOS |
 | --- | --- | --- |
-| Local PDF import | System document picker | System Files picker + local copy |
-| Open/read PDF | Android PdfRenderer | Apple PDFKit |
-| Page navigation | Previous/next + bitmap pinch zoom | PDFKit swipe/zoom + previous/next |
-| Recent library and filename search | Yes | Yes |
-| Bookmarks / favorites | Page bookmarks | Document favorites |
-| In-document text search | Not yet | Yes |
-| PDF text-note annotation | Not yet | Yes |
-| Local sharing | Android Sharesheet | iOS ShareLink |
-| Account or backend required | No | No |
+| PDF import and reading | System picker + PdfRenderer | System Files picker + PDFKit |
+| Page navigation and zoom | Yes | Yes |
+| Local document library / name search | Recent PDFs | Copied into private app storage |
+| Favorites | Yes | Yes |
+| Page bookmarks | Yes | No |
+| PDF full-text search | No | Yes |
+| PDF annotations | No | Text notes; highlight first search result |
+| Camera scanning | System camera, single photo into PDF; manual cropping not implemented | VisionKit camera scan, multi-page, auto edge adjustment |
+| Photo-to-PDF | Yes, single image | Yes, single image |
+| Merge multiple PDFs | Not yet | Yes, from local library |
+| Extract, rotate, reorder | Extract/rotate current page to **flattened** copy; no reorder | Extract, rotate, reorder in a new vector-preserving PDF |
+| Share PDF | Android Sharesheet | iOS ShareLink |
+| Internet/account needed for PDF operations | No | No |
 
-There are **no demo documents** or third-party CDN dependencies at runtime. Build dependencies are resolved by Gradle/Xcode tooling, then packaged locally with the apps.
+### Important limitations
 
-## Android
+- Android's current PDF engine is read-only. Its export operations create **rasterized** page copies; they do not preserve searchable text, forms or native annotations. Do not use those operations as secure redaction.
+- Android camera capture does not yet replicate the reference scanner's edge correction, multi-page capture and filters.
+- iOS PDF page operations retain PDF content rather than rendering to a bitmap, but complex PDF fidelity and forms require a broader compatibility test suite.
+- No OCR, encryption vault, text reflow, direct editing of original PDF text, password protection, verified redaction, undo/redo editor, or signing workflow has been shipped yet.
+- Full 1:1 visual matching to prior image renders requires real-device screenshots and audited interaction states. Current screens follow the same brand rather than claiming pixel-level equivalence.
 
-Requirements: Android Studio with Android SDK 35, JDK 17 and Gradle 8.11.1.
+## Development
 
-Open the repository root as a Gradle project, or run:
+Android requirements: Android SDK 35, JDK 17, Gradle 8.11.1.
 
 ```sh
 gradle :android:testDebugUnitTest :android:assembleDebug
 ```
 
-Install `android/build/outputs/apk/debug/android-debug.apk` with your device tools. The application requests no Internet permission. Files are selected through Android's Storage Access Framework. The system PDF renderer rasterizes pages on-device; advanced editing and OCR are not yet included.
+Android APK (debug): `android/build/outputs/apk/debug/android-debug.apk`, uploaded as a CI artifact.
 
-## iOS
-
-Requirements: macOS, Xcode with iOS 16+ support and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (build-time only, no runtime SDK).
+iOS requirements: Xcode, iOS 16+, [XcodeGen](https://github.com/yonaskolb/XcodeGen) as a build-time tool.
 
 ```sh
-cd ios
-xcodegen generate
-xcodebuild build -project Folqio.xcodeproj -scheme Folqio -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
+xcodegen generate --spec ios/project.yml --project ios
+xcodebuild build -project ios/Folqio.xcodeproj -scheme Folqio -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
 ```
 
-The generated Xcode project is intentionally gitignored; `ios/project.yml` is the source of truth. PDFs are imported from Files and stored in app-private Application Support. An Apple development account is needed for signing/distribution.
+Build tooling downloads pinned dependencies at development/build time, and packages the runtime code into the apps. It does not fetch scripts, fonts or PDF processing code from a CDN while the app runs. The iOS app relies on Apple's on-device frameworks. Android uses system PDF/camera APIs.
 
-## Architecture and quality
+## Project docs
 
-- Design tokens: [branding/BRAND.md](branding/BRAND.md)
-- Threat model and privacy: [docs/SECURITY.md](docs/SECURITY.md)
-- Feature plan and QA gates: [docs/ROADMAP.md](docs/ROADMAP.md)
-- CI: [Native CI](.github/workflows/ci.yml)
+- [Brand and design tokens](branding/BRAND.md)
+- [Design parity QA checklist](docs/DESIGN_QA.md)
+- [Manual interaction test checklist](docs/TESTING.md)
+- [Security and privacy](docs/SECURITY.md)
+- [Roadmap and release criteria](docs/ROADMAP.md)
 
-The rendered concept images are design references. Achieving 1:1 screen parity requires iterative real-device UI comparison and cannot be inferred solely from the artwork.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+MIT license — see [LICENSE](LICENSE).
