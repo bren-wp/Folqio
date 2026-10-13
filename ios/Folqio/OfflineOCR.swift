@@ -18,6 +18,12 @@ enum OCRFailure: LocalizedError {
 /// A single-page, on-device Vision text recognition pass.
 /// No document content or recognized text is transmitted or persisted.
 enum OfflineOCR {
+    static let maximumDocumentPages = 25
+
+    static func canScanWholeDocument(_ pageCount: Int) -> Bool {
+        (1...maximumDocumentPages).contains(pageCount)
+    }
+
     static func recognize(_ page: PDFPage) async throws -> String {
         let preview = page.thumbnail(
             of: CGSize(width: 1700, height: 2200), for: .mediaBox

@@ -76,6 +76,7 @@ private fun FolqioApp(initialUri: Uri?) {
     var current by remember { mutableStateOf<LocalPdf?>(null) }
     var importError by remember { mutableStateOf<String?>(null) }
     var creating by remember { mutableStateOf(false) }
+    var merging by remember { mutableStateOf(false) }
     var favoriteRevision by remember { mutableIntStateOf(0) }
     var pendingCapture by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -130,6 +131,43 @@ private fun FolqioApp(initialUri: Uri?) {
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
         if (uris.isNotEmpty()) createFromImages(uris)
     }
+    val mergePicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenMultipleDocuments()
+    ) { sources ->
+        if (sources.isNotEmpty()) {
+            if (!MergePolicy.validFiles(sources.size)) {
+                importError = "Select two to five PDF files."
+            } else {
+                sources.forEach { uri ->
+                    try {
+                        context.contentResolver.takePersistableUriPermission(
+                            uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        )
+                    } catch (_: SecurityException) {
+                        // Some providers do not offer persistable access.
+                    }
+                }
+                scope.launch {
+                    merging = true
+                    importError = null
+                    try {
+                        val merged = withContext(Dispatchers.IO) {
+                            AndroidMergeTools.merge(context.applicationContext, sources)
+                        }
+                        library.add(merged)
+                        recent = library.recent()
+                        current = merged
+                    } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                        throw cancelled
+                    } catch (failure: Exception) {
+                        importError = "Merge failed: ${failure.localizedMessage ?: "unsupported document"}"
+                    } finally {
+                        merging = false
+                    }
+                }
+            }
+        }
+    }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
         val uri = pendingCapture?.let(Uri::parse)
         pendingCapture = null
@@ -164,6 +202,7 @@ private fun FolqioApp(initialUri: Uri?) {
                         }
                     },
                     onPhoto = { imagePicker.launch("image/*") },
+                    onMerge = { mergePicker.launch(arrayOf("application/pdf")) },
                     onSelect = { current = it },
                     onRemove = { removed ->
                         library.remove(removed)
@@ -174,7 +213,7 @@ private fun FolqioApp(initialUri: Uri?) {
                         if (changed) recent = library.recent()
                         changed
                     },
-                    busy = creating,
+                    busy = creating || merging,
                     error = importError
                 )
             } else {

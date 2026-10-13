@@ -20,7 +20,7 @@ struct OCRResultView: View {
                     Label("Recognized on this device", systemImage: "lock.shield")
                         .font(.subheadline)
                         .foregroundStyle(FolqioColors.mint)
-                    Text("Page \(result.pageNumber)")
+                    Text(result.pageNumber == 0 ? "Document text" : "Page \(result.pageNumber)")
                         .font(.title2.bold())
                         .foregroundStyle(FolqioColors.pearl)
                     ScrollView {
