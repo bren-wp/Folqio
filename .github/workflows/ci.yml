@@ -101,9 +101,9 @@ jobs:
               assert z.testzip() is None
               data = [z.read(name) for name in expected]
               assert data == [
-                  b"%PDF-1.4\\nfirst invoice\\n",
-                  b"%PDF-1.4\\nsecond invoice\\n",
-                  b"%PDF-1.4\\nthird invoice\\n",
+                  b"%PDF-1.4\nfirst invoice\n",
+                  b"%PDF-1.4\nsecond invoice\n",
+                  b"%PDF-1.4\nthird invoice\n",
               ], data
           print("Verified iOS ZIP file names, actual bytes and CRC")
           PY
