@@ -34,10 +34,17 @@ struct ReaderView: View {
             }
             .sheet(isPresented: $showingPassword) {
                 if let document {
-                    UnlockDocumentSheet(document: document) {
-                        showingPassword = false
-                        unlockGeneration += 1
-                    }
+                    UnlockDocumentSheet(
+                        document: document,
+                        onUnlocked: {
+                            showingPassword = false
+                            unlockGeneration += 1
+                        },
+                        onCancel: {
+                            showingPassword = false
+                            dismiss()
+                        }
+                    )
                 }
             }
             .sheet(isPresented: $showingPages) {
