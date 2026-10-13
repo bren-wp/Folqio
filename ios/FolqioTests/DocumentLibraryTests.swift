@@ -81,3 +81,25 @@ final class DocumentToolsTests: XCTestCase {
         XCTAssertEqual(moved.pageCount, 3)
     }
 }
+
+@MainActor
+final class PhotoPDFBuilderTests: XCTestCase {
+    func testPhotoCountLimits() {
+        XCTAssertFalse(PhotoPDFBuilder.isValidPhotoCount(0))
+        XCTAssertTrue(PhotoPDFBuilder.isValidPhotoCount(1))
+        XCTAssertTrue(PhotoPDFBuilder.isValidPhotoCount(10))
+        XCTAssertFalse(PhotoPDFBuilder.isValidPhotoCount(11))
+    }
+
+    func testPhotoBuilderAppendsPagesLocally() throws {
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 220, height: 320))
+        let image = renderer.image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 220, height: 320))
+        }
+        let pdf = PDFDocument()
+        try PhotoPDFBuilder.appendImage(image, to: pdf)
+        try PhotoPDFBuilder.appendImage(image, to: pdf)
+        XCTAssertEqual(pdf.pageCount, 2)
+    }
+}

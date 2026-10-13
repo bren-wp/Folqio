@@ -17,6 +17,8 @@ struct ReaderView: View {
     @State private var showingNote = false
     @State private var noteText = ""
     @State private var message: String?
+    @State private var recognizing = false
+    @State private var ocrResult: OCRResult?
 
     var body: some View {
         readerLayout
@@ -46,6 +48,9 @@ struct ReaderView: View {
                         }
                     )
                 }
+            }
+            .sheet(item: $ocrResult) { result in
+                OCRResultView(result: result)
             }
             .sheet(isPresented: $showingPages) {
                 PageToolsView(item: item) { _ in
@@ -93,6 +98,15 @@ struct ReaderView: View {
                     .foregroundStyle(FolqioColors.muted)
             }
             Spacer(minLength: 0)
+            Button(action: recognizeCurrentPage) {
+                if recognizing {
+                    ProgressView()
+                } else {
+                    Image(systemName: "text.viewfinder")
+                }
+            }
+            .disabled(document == nil || document?.isLocked == true || recognizing)
+            .accessibilityLabel("Recognize text on this page offline")
             ShareLink(item: library.localURL(for: item)) {
                 Image(systemName: "square.and.arrow.up")
             }
@@ -202,6 +216,22 @@ struct ReaderView: View {
         guard let document, currentPageIndex + 1 < document.pageCount else { return }
         selectedSearchResult = nil
         currentPageIndex += 1
+    }
+
+    private func recognizeCurrentPage() {
+        guard !recognizing, let pdf = document, !pdf.isLocked,
+              let page = pdf.page(at: currentPageIndex) else { return }
+        let pageNumber = currentPageIndex + 1
+        recognizing = true
+        Task {
+            defer { recognizing = false }
+            do {
+                let text = try await OfflineOCR.recognize(page)
+                ocrResult = OCRResult(pageNumber: pageNumber, content: text)
+            } catch {
+                message = error.localizedDescription
+            }
+        }
     }
 
     private func search() {

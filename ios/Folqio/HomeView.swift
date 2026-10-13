@@ -18,7 +18,7 @@ struct HomeView: View {
     @State private var showingMerge = false
     @State private var onlyFavorites = false
     @State private var section: MainSection = .home
-    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var selectedPhotos: [PhotosPickerItem] = []
 
     private var filtered: [DocumentItem] {
         library.documents.filter {
@@ -95,7 +95,9 @@ struct HomeView: View {
                                 } label: {
                                     QuickAction(title: "Scan", symbol: "camera.viewfinder")
                                 }
-                                PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                                PhotosPicker(selection: $selectedPhotos,
+                                             maxSelectionCount: PhotoPDFBuilder.maximumPhotos,
+                                             matching: .images) {
                                     QuickAction(title: "Photo", symbol: "photo")
                                 }
                                 Button { showingMerge = true } label: {
@@ -233,26 +235,31 @@ struct HomeView: View {
                 MergeDocumentsView(onCreated: { _ in })
                     .environmentObject(library)
             }
-            .onChange(of: selectedPhoto) { photo in
-                guard let photo else { return }
+            .onChange(of: selectedPhotos) { photos in
+                guard !photos.isEmpty else { return }
                 Task {
+                    let selected = photos
+                    selectedPhotos = []
                     do {
-                        guard let data = try await photo.loadTransferable(type: Data.self),
-                              data.count <= 40_000_000,
-                              let picture = UIImage(data: data),
-                              let page = PDFPage(image: picture)
-                        else { throw DocumentError.inaccessible }
+                        guard PhotoPDFBuilder.isValidPhotoCount(selected.count) else {
+                            throw PhotoPDFError.invalidSelection
+                        }
                         let pdf = PDFDocument()
-                        pdf.insert(page, at: 0)
-                        _ = try library.createPDF(pdf, named: "Photo document.pdf")
+                        for photo in selected {
+                            guard let data = try await photo.loadTransferable(type: Data.self),
+                                  data.count <= PhotoPDFBuilder.maximumBytesPerPhoto,
+                                  let image = UIImage(data: data)
+                            else { throw PhotoPDFError.unreadableImage }
+                            try PhotoPDFBuilder.appendImage(image, to: pdf)
+                        }
+                        let created = try library.createPDF(
+                            pdf, named: selected.count == 1 ? "Photo document.pdf" : "Photo collection.pdf"
+                        )
+                        selectedDocument = created
                     } catch {
                         importError = error.localizedDescription
                     }
-                    selectedPhoto = nil
                 }
-            }
-            .sheet(item: $renameItem) { item in
-                RenameDocumentSheet(item: item).environmentObject(library)
             }
             .sheet(isPresented: $showPrivacy) {
                 PrivacyView()

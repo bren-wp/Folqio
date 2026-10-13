@@ -95,12 +95,12 @@ private fun FolqioApp(initialUri: Uri?) {
         importError = null
     }
 
-    fun createFromImage(uri: Uri) {
+    fun createFromImages(uris: List<Uri>) {
         scope.launch {
             creating = true
             try {
                 val pdf = withContext(Dispatchers.IO) {
-                    PhotoPdfTools.createPdf(context.applicationContext, uri)
+                    PhotoPdfTools.createPdf(context.applicationContext, uris)
                 }
                 library.add(pdf)
                 recent = library.recent()
@@ -126,13 +126,16 @@ private fun FolqioApp(initialUri: Uri?) {
             open(uri)
         }
     }
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) createFromImage(uri)
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+        if (uris.isNotEmpty()) createFromImages(uris)
     }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
         val uri = pendingCapture?.let(Uri::parse)
         pendingCapture = null
-        if (saved && uri != null) createFromImage(uri)
+        if (uri != null) {
+            if (saved) createFromImages(listOf(uri))
+            else PhotoPdfTools.discardCapture(context, uri)
+        }
     }
 
     MaterialTheme(colorScheme = darkColorScheme(
