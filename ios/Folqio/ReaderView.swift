@@ -18,12 +18,15 @@ struct ReaderView: View {
     @State private var noteText = ""
     @State private var message: String?
     @State private var recognizing = false
+    @State private var ocrProgress: String?
+    @State private var ocrTask: Task<Void, Never>?
     @State private var ocrResult: OCRResult?
 
     var body: some View {
         readerLayout
             .tint(FolqioColors.mint)
             .onAppear(perform: loadDocument)
+            .onDisappear { ocrTask?.cancel() }
             .onChange(of: currentPageIndex) { page in
                 library.recordPage(page, in: item)
             }
@@ -75,6 +78,17 @@ struct ReaderView: View {
             VStack(spacing: 0) {
                 navigationBar
                 searchBar
+                if let ocrProgress {
+                    HStack {
+                        ProgressView().tint(FolqioColors.mint)
+                        Text(ocrProgress).font(.caption).foregroundStyle(FolqioColors.muted)
+                        Spacer()
+                        Button("Cancel") { ocrTask?.cancel() }
+                            .font(.caption.weight(.semibold))
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 8)
+                }
                 documentArea
                 pageControls
             }
@@ -98,7 +112,15 @@ struct ReaderView: View {
                     .foregroundStyle(FolqioColors.muted)
             }
             Spacer(minLength: 0)
-            Button(action: recognizeCurrentPage) {
+            Menu {
+                Button(action: recognizeCurrentPage) {
+                    Label("Recognize current page", systemImage: "text.viewfinder")
+                }
+                Button(action: recognizeWholeDocument) {
+                    Label("Recognize entire PDF (max 25 pages)", systemImage: "doc.text.magnifyingglass")
+                }
+                .disabled(!OfflineOCR.canScanWholeDocument(document?.pageCount ?? 0))
+            } label: {
                 if recognizing {
                     ProgressView()
                 } else {
@@ -106,7 +128,7 @@ struct ReaderView: View {
                 }
             }
             .disabled(document == nil || document?.isLocked == true || recognizing)
-            .accessibilityLabel("Recognize text on this page offline")
+            .accessibilityLabel("Offline OCR options")
             ShareLink(item: library.localURL(for: item)) {
                 Image(systemName: "square.and.arrow.up")
             }
@@ -223,11 +245,57 @@ struct ReaderView: View {
               let page = pdf.page(at: currentPageIndex) else { return }
         let pageNumber = currentPageIndex + 1
         recognizing = true
-        Task {
-            defer { recognizing = false }
+        ocrProgress = "Reading page \(pageNumber)…"
+        ocrTask = Task {
+            defer {
+                recognizing = false
+                ocrProgress = nil
+                ocrTask = nil
+            }
             do {
                 let text = try await OfflineOCR.recognize(page)
+                try Task.checkCancellation()
                 ocrResult = OCRResult(pageNumber: pageNumber, content: text)
+            } catch is CancellationError {
+                // User cancelled processing.
+            } catch {
+                message = error.localizedDescription
+            }
+        }
+    }
+
+    private func recognizeWholeDocument() {
+        guard !recognizing, let pdf = document, !pdf.isLocked else { return }
+        guard OfflineOCR.canScanWholeDocument(pdf.pageCount) else {
+            message = "Whole-document OCR supports PDFs of up to 25 pages. You can still recognize an individual page."
+            return
+        }
+        recognizing = true
+        ocrTask = Task {
+            defer {
+                recognizing = false
+                ocrProgress = nil
+                ocrTask = nil
+            }
+            var sections: [String] = []
+            do {
+                for index in 0..<pdf.pageCount {
+                    try Task.checkCancellation()
+                    ocrProgress = "Recognizing page \(index + 1) of \(pdf.pageCount)…"
+                    guard let page = pdf.page(at: index) else { continue }
+                    do {
+                        let text = try await OfflineOCR.recognize(page)
+                        try Task.checkCancellation()
+                        sections.append("Page \(index + 1)\n\(text.prefix(8000))")
+                    } catch OCRFailure.emptyText {
+                        // Blank pages are normal and should not abort the document.
+                    }
+                }
+                try Task.checkCancellation()
+                guard !sections.isEmpty else { throw OCRFailure.emptyText }
+                ocrResult = OCRResult(pageNumber: 0, content: sections.joined(separator: "\n\n"))
+            } catch is CancellationError {
+                // Do not show incomplete OCR results.
             } catch {
                 message = error.localizedDescription
             }

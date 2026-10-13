@@ -9,7 +9,7 @@
 - iOS PDFs are imported to app-private Application Support with backup exclusions and file protection, subject to OS/device policy. Passwords used to unlock encrypted PDF files are not stored in the library.
 - iOS VisionKit scanner and system Photos picker use platform UI. The OS may optionally obtain photos from device-synced sources, but **Folqio does not upload their contents to its own backend**.
 - PDF rendering is handled locally by Android PdfRenderer and Apple PDFKit.
-- iOS uses Apple's on-device Vision OCR for one page at a time; recognized text stays in view state until the user explicitly copies it. It does not create a searchable PDF text layer.
+- iOS uses Apple's on-device Vision OCR for a page or up to 25 pages with cancel/progress; recognized text stays in view state until the user explicitly copies it. It does not create a searchable PDF text layer.
 - Android does not yet include an OCR SDK. We explicitly did **not** bundle Google ML Kit because its Android SDK documentation reports collection of diagnostic identifiers and performance information, which needs a separate privacy assessment.
 - Exports and share sheets are user-initiated.
 - No runtime CDN. Gradle dependencies are fetched at **build time** and packaged into the APK; native iOS features use Apple frameworks.
@@ -18,7 +18,7 @@
 
 - PDFs and images are untrusted input. Platform parsers should be kept updated and fuzz/compatibility tested. A successful compile does not prove safety.
 - Android image decode downsamples inputs to bound typical output memory and caps photo imports at ten files; PDF rendering is capped to 1200×3000 pixels.
-- Android exported PDF pages are rendered bitmaps: **not true redaction**, not full preservation of forms/text.
+- Android page copies and merged PDFs are rendered bitmaps: **not true redaction**, not full preservation of forms/text. Merge is capped at five input PDFs / fifty pages.
 - iOS PDFPage operations may have edge cases with tagged PDFs, signed/encrypted documents, embedded media or unusual forms; do not claim complete fidelity without tests.
 - iOS notes/highlights are written to the app's local copy. Preserve originals before destructive modifications.
 - No cryptographic document vault, password-reset flow, signing, OCR, secure redaction or malware sanitization is claimed yet.

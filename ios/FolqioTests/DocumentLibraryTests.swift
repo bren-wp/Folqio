@@ -103,3 +103,13 @@ final class PhotoPDFBuilderTests: XCTestCase {
         XCTAssertEqual(pdf.pageCount, 2)
     }
 }
+
+@MainActor
+final class OfflineOCRPolicyTests: XCTestCase {
+    func testWholeDocumentOCRLimit() {
+        XCTAssertFalse(OfflineOCR.canScanWholeDocument(0))
+        XCTAssertTrue(OfflineOCR.canScanWholeDocument(1))
+        XCTAssertTrue(OfflineOCR.canScanWholeDocument(25))
+        XCTAssertFalse(OfflineOCR.canScanWholeDocument(26))
+    }
+}

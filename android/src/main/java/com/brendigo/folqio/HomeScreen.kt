@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.CallMerge
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,6 +44,7 @@ internal fun FolqioHome(
     onOpen: () -> Unit,
     onCamera: () -> Unit,
     onPhoto: () -> Unit,
+    onMerge: () -> Unit,
     onSelect: (LocalPdf) -> Unit,
     onRemove: (LocalPdf) -> Unit,
     onRename: (LocalPdf, String) -> Boolean,
@@ -166,6 +168,23 @@ internal fun FolqioHome(
                             QuickAction("Open", Icons.Default.FolderOpen, Modifier.weight(1f), onOpen)
                             QuickAction("Scan", Icons.Default.CameraAlt, Modifier.weight(1f), onCamera)
                             QuickAction("Photos", Icons.Default.Photo, Modifier.weight(1f), onPhoto)
+                        }
+                        Spacer(Modifier.height(9.dp))
+                        Card(
+                            onClick = onMerge,
+                            colors = CardDefaults.cardColors(containerColor = slate),
+                            shape = RoundedCornerShape(15.dp)
+                        ) {
+                            Row(Modifier.fillMaxWidth().padding(15.dp),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.CallMerge, contentDescription = null, tint = mint)
+                                Spacer(Modifier.width(10.dp))
+                                Column {
+                                    Text("Merge PDF files", color = pearl, fontWeight = FontWeight.SemiBold)
+                                    Text("2–5 files · flattened output · max 50 pages",
+                                        color = muted, style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
                         }
                     }
                 }
