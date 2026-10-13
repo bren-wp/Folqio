@@ -15,8 +15,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.CallMerge
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -244,19 +243,33 @@ internal fun FolqioHome(
                             Spacer(Modifier.width(12.dp))
                             Text(file.name, color = pearl, maxLines = 2,
                                 overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                            IconButton(onClick = { onFavorite(file.uri) }) {
-                                Icon(if (isFavorite(file.uri)) Icons.Default.Star else Icons.Default.StarBorder,
-                                    contentDescription = "Toggle favorite", tint = mint)
-                            }
-                            IconButton(onClick = {
-                                renaming = file
-                                renameText = file.name
-                                invalidRename = false
-                            }) {
-                                Icon(Icons.Default.Edit, "Rename display label", tint = muted)
-                            }
-                            IconButton(onClick = { removing = file }) {
-                                Icon(Icons.Default.Close, "Remove document", tint = muted)
+                            var menuOpen by remember(file.uri) { mutableStateOf(false) }
+                            Box {
+                                IconButton(onClick = { menuOpen = true }) {
+                                    Icon(Icons.Default.MoreVert, "Document options", tint = muted)
+                                }
+                                DropdownMenu(
+                                    expanded = menuOpen,
+                                    onDismissRequest = { menuOpen = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(if (isFavorite(file.uri)) "Remove favorite" else "Add favorite") },
+                                        onClick = { menuOpen = false; onFavorite(file.uri) }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Rename") },
+                                        onClick = {
+                                            menuOpen = false
+                                            renaming = file
+                                            renameText = file.name
+                                            invalidRename = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Remove") },
+                                        onClick = { menuOpen = false; removing = file }
+                                    )
+                                }
                             }
                         }
                     }

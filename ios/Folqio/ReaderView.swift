@@ -177,44 +177,27 @@ struct ReaderView: View {
         }
     }
 
+    // Icon-only, equal-width controls avoid clipping on compact iPhones and Dynamic Type.
     private var pageControls: some View {
-        HStack(spacing: 20) {
-            Button(action: previousPage) {
-                Image(systemName: "chevron.left")
-            }
-            .disabled(currentPageIndex == 0)
-            .accessibilityLabel("Previous page")
-            Spacer()
-            Button(action: { library.toggleFavorite(item) }) {
-                Image(systemName: isFavorite ? "star.fill" : "star")
-            }
-            .accessibilityLabel("Toggle favorite")
-            Spacer()
-            Button(action: { showingNote = true }) {
-                Label("Add note", systemImage: "note.text.badge.plus")
-            }
-            .disabled(document == nil)
-            Spacer()
-            Button(action: highlightSearchResult) {
-                Image(systemName: "highlighter")
-            }
-            .disabled(selectedSearchResult == nil)
-            .accessibilityLabel("Highlight found text")
-            Spacer()
-            Button(action: { showingPages = true }) {
-                Image(systemName: "square.grid.2x2")
-            }
-            .disabled(document == nil)
-            .accessibilityLabel("Manage PDF pages")
-            Spacer()
-            Button(action: nextPage) {
-                Image(systemName: "chevron.right")
-            }
-            .disabled(currentPageIndex >= (document?.pageCount ?? 1) - 1)
-            .accessibilityLabel("Next page")
+        HStack(spacing: 3) {
+            ReaderAction(symbol: "chevron.left", label: "Previous page",
+                         disabled: currentPageIndex == 0, action: previousPage)
+            ReaderAction(symbol: isFavorite ? "star.fill" : "star",
+                         label: "Toggle favorite") { library.toggleFavorite(item) }
+            ReaderAction(symbol: "note.text.badge.plus", label: "Add note",
+                         disabled: document == nil) { showingNote = true }
+            ReaderAction(symbol: "highlighter", label: "Highlight found text",
+                         disabled: selectedSearchResult == nil, action: highlightSearchResult)
+            ReaderAction(symbol: "square.grid.2x2", label: "Manage PDF pages",
+                         disabled: document == nil) { showingPages = true }
+            ReaderAction(symbol: "chevron.right", label: "Next page",
+                         disabled: currentPageIndex >= (document?.pageCount ?? 1) - 1,
+                         action: nextPage)
         }
         .foregroundStyle(FolqioColors.mint)
-        .padding(18)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(FolqioColors.slate)
     }
 
     private var isFavorite: Bool {
@@ -416,5 +399,24 @@ private struct PDFViewer: UIViewRepresentable {
         deinit {
             if let observer { NotificationCenter.default.removeObserver(observer) }
         }
+    }
+}
+
+private struct ReaderAction: View {
+    let symbol: String
+    let label: String
+    var disabled = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 19, weight: .medium))
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+        .accessibilityLabel(label)
     }
 }
