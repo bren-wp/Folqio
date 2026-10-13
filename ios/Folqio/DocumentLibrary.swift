@@ -3,7 +3,7 @@ import PDFKit
 
 struct DocumentItem: Codable, Identifiable, Hashable {
     let id: UUID
-    let filename: String
+    var filename: String
     let relativePath: String
     var isFavorite: Bool
     var lastReadPage: Int
@@ -95,6 +95,18 @@ final class DocumentLibrary: ObservableObject {
         documents.insert(item, at: 0)
         save()
         return item
+    }
+
+    /// Rename only Folqio's display label. Files stay under stable UUID filenames.
+    @discardableResult
+    func renameLabel(_ item: DocumentItem, requestedName: String) -> Bool {
+        let value = String(requestedName.trimmingCharacters(in: .whitespacesAndNewlines).prefix(160))
+        guard !value.isEmpty, !value.contains("/"), !value.contains("\\"),
+              !value.contains("\n"), !value.contains("\r"),
+              let index = documents.firstIndex(where: { $0.id == item.id }) else { return false }
+        documents[index].filename = Self.isPDFName(value) ? value : value + ".pdf"
+        save()
+        return true
     }
 
     func toggleFavorite(_ item: DocumentItem) {

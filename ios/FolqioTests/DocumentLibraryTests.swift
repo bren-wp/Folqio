@@ -11,6 +11,17 @@ final class DocumentLibraryTests: XCTestCase {
         XCTAssertFalse(DocumentLibrary.isPDFName("Invoice.pdf.exe"))
     }
 
+    func testRenameRejectsBadNames() {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = DocumentLibrary(rootURL: root)
+        let unknown = DocumentItem(id: UUID(), filename: "Unknown.pdf",
+                                   relativePath: UUID().uuidString + ".pdf",
+                                   isFavorite: false, lastReadPage: 0)
+        XCTAssertFalse(library.renameLabel(unknown, requestedName: "New.pdf"))
+        XCTAssertFalse(library.renameLabel(unknown, requestedName: "../invalid"))
+    }
+
     func testNewLibraryIsEmpty() {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

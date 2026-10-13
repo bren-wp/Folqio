@@ -13,6 +13,7 @@ struct HomeView: View {
     @State private var query = ""
     @State private var importError: String?
     @State private var showPrivacy = false
+    @State private var renameItem: DocumentItem?
     @State private var showingScanner = false
     @State private var showingMerge = false
     @State private var onlyFavorites = false
@@ -168,6 +169,7 @@ struct HomeView: View {
                                 .background(FolqioColors.slate, in: RoundedRectangle(cornerRadius: 15))
                             }
                             .contextMenu {
+                                Button("Rename label", systemImage: "pencil") { renameItem = document }
                                 Button(document.isFavorite ? "Remove favorite" : "Add favorite",
                                        systemImage: document.isFavorite ? "star.slash" : "star") {
                                     library.toggleFavorite(document)
@@ -248,6 +250,9 @@ struct HomeView: View {
                     }
                     selectedPhoto = nil
                 }
+            }
+            .sheet(item: $renameItem) { item in
+                RenameDocumentSheet(item: item).environmentObject(library)
             }
             .sheet(isPresented: $showPrivacy) {
                 PrivacyView()
