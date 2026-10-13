@@ -11,6 +11,7 @@ struct ReaderView: View {
     @State private var currentPageIndex = 0
     @State private var query = ""
     @State private var selectedSearchResult: PDFSelection?
+    @State private var showingPages = false
     @State private var showingNote = false
     @State private var noteText = ""
     @State private var message: String?
@@ -28,6 +29,12 @@ struct ReaderView: View {
                 Button("Save", action: saveNote)
             } message: {
                 Text("Adds a note annotation to the current page.")
+            }
+            .sheet(isPresented: $showingPages) {
+                PageToolsView(item: item) { _ in
+                    message = "Saved an edited copy to your document library."
+                }
+                .environmentObject(library)
             }
             .alert("PDF reader", isPresented: messageIsPresented) {
                 Button("OK", role: .cancel) { message = nil }
@@ -133,6 +140,12 @@ struct ReaderView: View {
                 Label("Add note", systemImage: "note.text.badge.plus")
             }
             .disabled(document == nil)
+            Spacer()
+            Button(action: { showingPages = true }) {
+                Image(systemName: "square.grid.2x2")
+            }
+            .disabled(document == nil)
+            .accessibilityLabel("Manage PDF pages")
             Spacer()
             Button(action: nextPage) {
                 Image(systemName: "chevron.right")

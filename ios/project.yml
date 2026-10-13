@@ -20,6 +20,7 @@ targets:
         INFOPLIST_KEY_UIFileSharingEnabled: YES
         INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: NO
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_NSCameraUsageDescription: Scan paper documents into a PDF without uploading them.
         DEVELOPMENT_TEAM: ""
   FolqioTests:
     type: bundle.unit-test

@@ -71,6 +71,32 @@ final class DocumentLibrary: ObservableObject {
         return item
     }
 
+
+    /// Persist a complete new PDF as an app-local document. Failures do not add it to the library.
+    @discardableResult
+    func createPDF(_ pdf: PDFDocument, named name: String) throws -> DocumentItem {
+        guard pdf.pageCount > 0 else { throw DocumentError.notPDF }
+        let id = UUID()
+        let path = id.uuidString + ".pdf"
+        let destination = rootURL.appendingPathComponent(path)
+        let temporary = rootURL.appendingPathComponent(UUID().uuidString + ".part")
+        defer { try? FileManager.default.removeItem(at: temporary) }
+
+        guard pdf.write(to: temporary) else { throw DocumentError.inaccessible }
+        try FileManager.default.setAttributes(
+            [.protectionKey: FileProtectionType.complete],
+            ofItemAtPath: temporary.path
+        )
+        try FileManager.default.moveItem(at: temporary, to: destination)
+        let safeName = String(name.prefix(175))
+        let filename = Self.isPDFName(safeName) ? safeName : safeName + ".pdf"
+        let item = DocumentItem(id: id, filename: filename, relativePath: path,
+                                isFavorite: false, lastReadPage: 0)
+        documents.insert(item, at: 0)
+        save()
+        return item
+    }
+
     func toggleFavorite(_ item: DocumentItem) {
         guard let index = documents.firstIndex(where: { $0.id == item.id }) else { return }
         documents[index].isFavorite.toggle()

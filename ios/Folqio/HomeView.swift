@@ -1,5 +1,8 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import PhotosUI
+import VisionKit
+import PDFKit
 
 struct HomeView: View {
     @EnvironmentObject private var library: DocumentLibrary
@@ -8,9 +11,16 @@ struct HomeView: View {
     @State private var query = ""
     @State private var importError: String?
     @State private var showPrivacy = false
+    @State private var showingScanner = false
+    @State private var showingMerge = false
+    @State private var onlyFavorites = false
+    @State private var selectedPhoto: PhotosPickerItem?
 
     private var filtered: [DocumentItem] {
-        library.documents.filter { query.isEmpty || $0.filename.localizedCaseInsensitiveContains(query) }
+        library.documents.filter {
+            (!onlyFavorites || $0.isFavorite) &&
+            (query.isEmpty || $0.filename.localizedCaseInsensitiveContains(query))
+        }
     }
 
     var body: some View {
@@ -62,6 +72,44 @@ struct HomeView: View {
                                 .foregroundStyle(FolqioColors.midnight)
                             }
                         }
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Quick actions")
+                                .font(.title3.bold())
+                                .foregroundStyle(FolqioColors.pearl)
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 10) {
+                                Button { isImporterPresented = true } label: {
+                                    QuickAction(title: "Open", symbol: "folder")
+                                }
+                                Button {
+                                    if VNDocumentCameraViewController.isSupported {
+                                        showingScanner = true
+                                    } else {
+                                        importError = "Document scanning requires a camera-enabled iPhone or iPad."
+                                    }
+                                } label: {
+                                    QuickAction(title: "Scan", symbol: "camera.viewfinder")
+                                }
+                                PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                                    QuickAction(title: "Photo", symbol: "photo")
+                                }
+                                Button { showingMerge = true } label: {
+                                    QuickAction(title: "Merge", symbol: "square.on.square")
+                                }
+                                .disabled(library.documents.count < 2)
+                            }
+                            Text("All document processing stays on your device.")
+                                .font(.caption)
+                                .foregroundStyle(FolqioColors.muted)
+                        }
+
+                        HStack(spacing: 12) {
+                            Button("All files") { onlyFavorites = false }
+                                .foregroundStyle(onlyFavorites ? FolqioColors.muted : FolqioColors.mint)
+                            Button("Favorites") { onlyFavorites = true }
+                                .foregroundStyle(onlyFavorites ? FolqioColors.mint : FolqioColors.muted)
+                        }
+                        .font(.subheadline.weight(.medium))
 
                         HStack {
                             Text("Recent files")
@@ -160,6 +208,40 @@ struct HomeView: View {
                 ReaderView(item: item)
                     .environmentObject(library)
             }
+            .fullScreenCover(isPresented: $showingScanner) {
+                DocumentScannerView(onScan: { pdf in
+                    showingScanner = false
+                    do { _ = try library.createPDF(pdf, named: "Scanned document.pdf") }
+                    catch { importError = error.localizedDescription }
+                }, onCancel: {
+                    showingScanner = false
+                }, onError: { error in
+                    showingScanner = false
+                    importError = error.localizedDescription
+                })
+            }
+            .sheet(isPresented: $showingMerge) {
+                MergeDocumentsView(onCreated: { _ in })
+                    .environmentObject(library)
+            }
+            .onChange(of: selectedPhoto) { photo in
+                guard let photo else { return }
+                Task {
+                    do {
+                        guard let data = try await photo.loadTransferable(type: Data.self),
+                              data.count <= 40_000_000,
+                              let picture = UIImage(data: data),
+                              let page = PDFPage(image: picture)
+                        else { throw DocumentError.inaccessible }
+                        let pdf = PDFDocument()
+                        pdf.insert(page, at: 0)
+                        _ = try library.createPDF(pdf, named: "Photo document.pdf")
+                    } catch {
+                        importError = error.localizedDescription
+                    }
+                    selectedPhoto = nil
+                }
+            }
             .sheet(isPresented: $showPrivacy) {
                 PrivacyView()
                     .presentationDetents([.medium])
@@ -185,5 +267,26 @@ private struct PrivacyView: View {
             .foregroundStyle(FolqioColors.pearl)
             .padding(28)
         }
+    }
+}
+
+private struct QuickAction: View {
+    let title: String
+    let symbol: String
+
+    var body: some View {
+        VStack(spacing: 9) {
+            Image(systemName: symbol)
+                .font(.title2.weight(.medium))
+                .frame(height: 28)
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .foregroundStyle(FolqioColors.mint)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(FolqioColors.slate, in: RoundedRectangle(cornerRadius: 16))
     }
 }
