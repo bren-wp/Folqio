@@ -49,6 +49,14 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             -quiet
+      - name: Compile iOS unit tests
+        run: |
+          xcodebuild build-for-testing \
+            -project ios/Folqio.xcodeproj \
+            -scheme Folqio \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet
       - name: Run unit tests when a simulator is installed
         run: |
           SIMULATOR_ID="$(python3 -c 'import json,subprocess; p=subprocess.run(["xcrun","simctl","list","devices","available","-j"],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,timeout=20,check=False); d=json.loads(p.stdout) if p.returncode == 0 else {"devices":{}}; print(next((x["udid"] for group in d.get("devices",{}).values() for x in group if "iPhone" in x.get("name","")), ""))' || true)"

@@ -41,6 +41,16 @@ class PdfLibrary(context: Context) {
         preferences.edit().putString("recent", entries.toString()).apply()
     }
 
+    fun isFavorite(uri: String): Boolean =
+        preferences.getStringSet("favorites", emptySet())?.contains(uri) == true
+
+    fun toggleFavorite(uri: String): Boolean {
+        val favorites = preferences.getStringSet("favorites", emptySet()).orEmpty().toMutableSet()
+        if (!favorites.add(uri)) favorites.remove(uri)
+        preferences.edit().putStringSet("favorites", favorites).apply()
+        return uri in favorites
+    }
+
     fun isBookmarked(uri: String, page: Int): Boolean =
         preferences.getStringSet("bookmarks", emptySet())?.contains("$uri#$page") == true
 

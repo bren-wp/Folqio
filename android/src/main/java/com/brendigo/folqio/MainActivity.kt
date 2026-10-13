@@ -46,6 +46,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.compose.runtime.saveable.rememberSaveable
+import kotlin.math.roundToInt
 
 private val Midnight = Color(0xFF0B1321)
 private val Slate = Color(0xFF1A2433)
@@ -65,14 +70,17 @@ class MainActivity : ComponentActivity() {
 private fun FolqioApp(initialUri: Uri?) {
     val context = LocalContext.current
     val library = remember { PdfLibrary(context.applicationContext) }
+    val scope = rememberCoroutineScope()
     var recent by remember { mutableStateOf(library.recent()) }
     var current by remember { mutableStateOf<LocalPdf?>(null) }
-    var query by remember { mutableStateOf("") }
     var importError by remember { mutableStateOf<String?>(null) }
+    var creating by remember { mutableStateOf(false) }
+    var favoriteRevision by remember { mutableIntStateOf(0) }
+    var pendingCapture by rememberSaveable { mutableStateOf<String?>(null) }
 
     fun open(uri: Uri) {
         if (uri.scheme != "content") {
-            importError = "Only documents shared through your device are supported."
+            importError = "Use the system file picker to open this PDF."
             return
         }
         val displayName = runCatching {
@@ -87,17 +95,44 @@ private fun FolqioApp(initialUri: Uri?) {
         importError = null
     }
 
+    fun createFromImage(uri: Uri) {
+        scope.launch {
+            creating = true
+            try {
+                val pdf = withContext(Dispatchers.IO) {
+                    PhotoPdfTools.createPdf(context.applicationContext, uri)
+                }
+                library.add(pdf)
+                recent = library.recent()
+                current = pdf
+                importError = null
+            } catch (failure: Exception) {
+                importError = "Cannot create PDF: ${failure.localizedMessage ?: "invalid image"}"
+            } finally {
+                creating = false
+            }
+        }
+    }
+
     LaunchedEffect(initialUri) { initialUri?.let { open(it) } }
 
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    val pdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             try {
                 context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             } catch (_: SecurityException) {
-                // Some document providers only grant temporary access.
+                // Some providers supply only temporary read access.
             }
             open(uri)
         }
+    }
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) createFromImage(uri)
+    }
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
+        val uri = pendingCapture?.let(Uri::parse)
+        pendingCapture = null
+        if (saved && uri != null) createFromImage(uri)
     }
 
     MaterialTheme(colorScheme = darkColorScheme(
@@ -105,70 +140,76 @@ private fun FolqioApp(initialUri: Uri?) {
         surface = Slate, onSurface = White, surfaceVariant = Slate
     )) {
         Surface(modifier = Modifier.fillMaxSize(), color = Midnight) {
-            if (current == null) {
-                Column(Modifier.fillMaxSize().padding(horizontal = 22.dp)) {
-                    Spacer(Modifier.height(24.dp))
-                    Text("FOLQIO", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Black, color = White)
-                    Text("Your documents. Your device.", color = Muted)
-                    Spacer(Modifier.height(28.dp))
-                    Card(colors = CardDefaults.cardColors(containerColor = Slate), shape = RoundedCornerShape(22.dp)) {
-                        Column(Modifier.fillMaxWidth().padding(20.dp)) {
-                            Icon(Icons.Default.FolderOpen, contentDescription = null, tint = Mint, modifier = Modifier.size(36.dp))
-                            Spacer(Modifier.height(12.dp))
-                            Text("Your documents, in your hands.", style = MaterialTheme.typography.titleLarge, color = White, fontWeight = FontWeight.Bold)
-                            Text("Open and read PDFs locally. No account or cloud required.", color = Muted)
-                            Spacer(Modifier.height(16.dp))
-                            Button(onClick = { picker.launch(arrayOf("application/pdf")) }, modifier = Modifier.fillMaxWidth()) {
-                                Icon(Icons.Default.FolderOpen, contentDescription = null)
-                                Spacer(Modifier.width(9.dp))
-                                Text("Open PDF")
-                            }
+            val file = current
+            if (file == null) {
+                FolqioHome(
+                    files = recent,
+                    isFavorite = { key -> favoriteRevision.let { library.isFavorite(key) } },
+                    onFavorite = { key ->
+                        library.toggleFavorite(key)
+                        favoriteRevision++
+                    },
+                    onOpen = { pdfPicker.launch(arrayOf("application/pdf")) },
+                    onCamera = {
+                        try {
+                            val uri = PhotoPdfTools.newCameraDestination(context)
+                            pendingCapture = uri.toString()
+                            camera.launch(uri)
+                        } catch (failure: Exception) {
+                            importError = failure.localizedMessage ?: "Cannot open camera."
                         }
-                    }
-                    Spacer(Modifier.height(25.dp))
-                    Text("Recent files", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = White)
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = query, onValueChange = { query = it },
-                        label = { Text("Search file names") }, singleLine = true,
-                        modifier = Modifier.fillMaxWidth(), leadingIcon = { Icon(Icons.Default.Search, null) }
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    val filtered = recent.filter { it.name.contains(query, ignoreCase = true) }
-                    if (filtered.isEmpty()) {
-                        Text(if (recent.isEmpty()) "Open a PDF to see it here." else "No matching documents.", color = Muted)
-                    } else {
-                        LazyColumn(contentPadding = PaddingValues(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(filtered, key = { it.uri }) { file ->
-                                Card(onClick = { current = file }, colors = CardDefaults.cardColors(containerColor = Slate), shape = RoundedCornerShape(14.dp)) {
-                                    Row(Modifier.fillMaxWidth().padding(15.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Description, null, tint = Mint)
-                                        Spacer(Modifier.width(12.dp))
-                                        Text(file.name, color = White, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                                        IconButton(onClick = { library.remove(file); recent = library.recent() }) {
-                                            Icon(Icons.Default.Close, contentDescription = "Remove from recents", tint = Muted)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (importError != null) Text(importError!!, color = MaterialTheme.colorScheme.error)
-                }
+                    },
+                    onPhoto = { imagePicker.launch("image/*") },
+                    onSelect = { current = it },
+                    onRemove = { removed ->
+                        library.remove(removed)
+                        recent = library.recent()
+                    },
+                    busy = creating,
+                    error = importError
+                )
             } else {
-                PdfReader(current!!, library, onBack = { current = null }, onRemove = {
-                    library.remove(current!!)
-                    recent = library.recent()
-                    current = null
-                })
+                PdfReader(
+                    file = file, library = library, onBack = { current = null },
+                    onRemove = {
+                        library.remove(file)
+                        recent = library.recent()
+                        current = null
+                    },
+                    onCreated = { newFile ->
+                        library.add(newFile)
+                        recent = library.recent()
+                        current = newFile
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, onRemove: () -> Unit) {
+private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, onRemove: () -> Unit, onCreated: (LocalPdf) -> Unit) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var exporting by remember(file.uri) { mutableStateOf(false) }
+    var exportError by remember(file.uri) { mutableStateOf<String?>(null) }
+
+    fun exportPage(rotate: Boolean) {
+        scope.launch {
+            exporting = true
+            try {
+                val created = withContext(Dispatchers.IO) {
+                    AndroidPageTools.copyPage(context.applicationContext, Uri.parse(file.uri), page, rotate)
+                }
+                onCreated(created)
+            } catch (failure: Exception) {
+                exportError = failure.localizedMessage ?: "Cannot export this page."
+            } finally {
+                exporting = false
+            }
+        }
+    }
+
     var page by remember(file.uri) { mutableIntStateOf(0) }
     var count by remember(file.uri) { mutableIntStateOf(0) }
     var image by remember(file.uri) { mutableStateOf<android.graphics.Bitmap?>(null) }
@@ -228,6 +269,25 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, o
                         }
                 )
             }
+        }
+        if (exporting) LinearProgressIndicator(Modifier.fillMaxWidth(), color = Mint)
+        if (exportError != null) Text(exportError!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp))
+        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            OutlinedButton(onClick = { exportPage(false) }, enabled = image != null && !exporting,
+                modifier = Modifier.weight(1f)) { Text("Extract copy") }
+            OutlinedButton(onClick = { exportPage(true) }, enabled = image != null && !exporting,
+                modifier = Modifier.weight(1f)) { Text("Rotate copy") }
+        }
+        Text("Copies are flattened images, not editable PDF text.",
+            style = MaterialTheme.typography.labelSmall, color = Muted,
+            modifier = Modifier.padding(start = 14.dp, bottom = 3.dp))
+        if (count > 1) {
+            Slider(
+                value = page.toFloat(), onValueChange = { page = it.roundToInt() },
+                valueRange = 0f..(count - 1).toFloat(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
+            )
         }
         Row(
             Modifier.fillMaxWidth().padding(10.dp),
