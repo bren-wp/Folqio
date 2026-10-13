@@ -54,3 +54,11 @@
 - iOS: protect prepared archives with file protection, and clean up only Folqio-generated ZIP files older than one day during the next export session.
 - macOS CI: execute an actual Swift ZIP export and validate archive names and content with Python's ZIP parser.
 - A successful build/ZIP integrity smoke test is not a claim of full device testing or 1:1 visual parity.
+
+## v0.1.9 — annotation safety and clarity
+
+- iOS notes and highlights now create a separate library document instead of writing over the original PDF. The new copy is saved via the protected library writer.
+- iOS offers a free-text annotation overlay on the current page, explicitly differentiated from editing pre-existing PDF text.
+- Regression tests check PDF annotation isolation, persistence, and unchanged source bytes.
+- Both settings pages show the installed Folqio version. Android/iOS build numbers are aligned and the source audit validates version consistency rather than comparing against an obsolete fixed version.
+- Still pending: replacing pre-existing PDF text, Android lossless annotation parity, cryptographic signature preservation, broad physical-device testing, and signed store builds.
