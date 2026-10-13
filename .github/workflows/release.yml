@@ -40,6 +40,17 @@ jobs:
           fi
       - name: Run Android unit tests and package
         run: gradle :android:testDebugUnitTest :android:lintDebug :android:assembleDebug :android:bundleRelease
+      - name: Verify unsigned bundle and debug APK
+        run: |
+          test -s android/build/outputs/bundle/release/android-release.aab
+          unzip -t android/build/outputs/bundle/release/android-release.aab >/dev/null
+          test -s android/build/outputs/apk/debug/android-debug.apk
+          unzip -t android/build/outputs/apk/debug/android-debug.apk >/dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: folqio-unsigned-aab
+          path: android/build/outputs/bundle/release/android-release.aab
+          if-no-files-found: error
       - name: Verify APK artifact exists
         run: |
           test -s android/build/outputs/apk/debug/android-debug.apk
@@ -89,6 +100,10 @@ jobs:
         with:
           name: folqio-development-apk
           path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: folqio-unsigned-aab
+          path: dist
       - name: Publish versioned development build
         env:
           GH_TOKEN: ${{ github.token }}
@@ -102,8 +117,9 @@ jobs:
             exit 0
           fi
           cp dist/android-debug.apk "dist/Folqio-$TAG-Android-debug.apk"
-          gh release create "$TAG" "dist/Folqio-$TAG-Android-debug.apk" \
+          cp dist/android-release.aab "dist/Folqio-$TAG-Android-UNSIGNED.aab"
+          gh release create "$TAG" "dist/Folqio-$TAG-Android-debug.apk" "dist/Folqio-$TAG-Android-UNSIGNED.aab" \
             --target "$GITHUB_SHA" \
             --title "Folqio $TAG — development preview" \
             --prerelease \
-            --notes "Development preview only. Android APK is debug-signed, not Play Store-ready. iOS source is in this repository but cannot be distributed without Apple signing. See README and docs/ROADMAP.md for unimplemented features and 1:1 UI QA limitations."
+            --notes "Android APK: debug-signed, for development only. Android AAB: UNSIGNED, for manual signing; NOT accepted for Play upload as-is. iOS: source builds with Xcode 26; an IPA requires your Apple distribution identity and provisioning. No ad SDK, user accounts, analytics or cloud document upload. This is a development prerelease, not a claim of complete PDF editing or verified 1:1 device UI parity."

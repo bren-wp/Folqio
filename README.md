@@ -1,74 +1,68 @@
-# FOLQIO — PDF Reader & Editor
+<div align="center">
+  <img src="branding/folqio-symbol.svg" alt="Folqio document and checkmark emblem" width="132" />
+  <h1>FOLQIO</h1>
+  <p><strong>Your documents. Your device.</strong></p>
+  <p>Read, scan, organize, and share PDFs with a calm, beautifully focused workspace.</p>
+  <p>
+    <img alt="Android and iOS" src="https://img.shields.io/badge/Android_%26_iOS-0B1321?style=flat-square" />
+    <img alt="Offline first" src="https://img.shields.io/badge/Offline--first-22D3A7?style=flat-square&labelColor=0B1321" />
+    <img alt="No account required" src="https://img.shields.io/badge/No_account_required-1A2433?style=flat-square" />
+    <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-1A2433?style=flat-square" />
+  </p>
+  <p>
+    <a href="https://github.com/bren-wp/Folqio/releases">Get Folqio</a>
+    ·
+    <a href="docs/SECURITY.md">Privacy</a>
+    ·
+    <a href="docs/DESIGN_QA.md">Design principles</a>
+  </p>
+</div>
 
-**Your documents. Your device.**
+---
 
-Folqio is a privacy-oriented, offline-first document app with separately implemented **Android (Kotlin/Jetpack Compose)** and **iOS (Swift/SwiftUI/PDFKit)** versions. The UI uses Folqio's navy, slate and mint visual language. The 1:1 design parity requirement has **not** yet passed screenshot overlay QA.
+## One beautiful place for your PDFs
 
-> **Status: native development preview, v0.1.3. Not production-ready.** All examples shown in previous concept renders are targets, not proof of implemented screens or pixel-perfect parity. There are no demo PDF files or user accounts in the app.
+Folqio puts your documents first. Its dark midnight-navy interface, carefully balanced mint highlights, and familiar tools make everyday PDF work feel simple.
 
-## Real functionality
+| | |
+| --- | --- |
+| **📖 Read with ease** | Open PDFs from your device, move between pages, zoom, and return to where you left off. |
+| **📷 Capture documents** | Turn photos into PDFs. The iOS document camera supports multi-page scanning with automatic page detection. |
+| **📁 Stay organized** | Find documents by name, rename library labels, save favorites, and keep recent files close. |
+| **🧩 Work with pages** | Create multi-page PDFs, extract or rotate pages, and combine documents. Available page tools vary by platform. |
+| **🔎 Find what matters** | Search selectable PDF text and recognize scanned text on iOS with on-device OCR. |
+| **↗️ Share on your terms** | Export or share a document only when you choose to do so. |
 
-| Feature | Android | iOS |
-| --- | --- | --- |
-| PDF import and reading | System picker + PdfRenderer | System Files picker + PDFKit |
-| Page navigation and zoom | Yes | Yes |
-| Local document library / name search | Recent PDFs | Copied into private app storage |
-| Favorites | Yes | Yes |
-| Rename library display label | Yes | Yes |
-| Open encrypted PDF with password | Not yet | Yes; entered locally and not persisted |
-| Page bookmarks | Yes | No |
-| PDF full-text search | No | Yes |
-| On-device OCR | Not yet | Current page or entire PDF up to 25 pages; read/copy only |
-| PDF annotations | No | Text notes; highlight first search result |
-| Camera scanning | System camera, single photo into PDF; manual cropping not implemented | VisionKit camera scan, multi-page, auto edge adjustment |
-| Photo-to-PDF | Up to ten photos per multipage PDF | Up to ten photos per multipage PDF |
-| Merge multiple PDFs | Yes, 2–5 PDFs, max 50 pages, **flattened copy** | Yes, from local library |
-| Extract, rotate, reorder | Extract/rotate current page to **flattened** copy; no reorder | Extract, rotate, reorder in a new vector-preserving PDF |
-| Share PDF | Android Sharesheet | iOS ShareLink |
-| Save as a separate PDF file | Android system Save document picker | iOS system ShareLink / Save to Files |
-| Restore last read page | Yes (bounds-checked) | Yes |
-| Internet/account needed for PDF operations | No | No |
+## Designed to feel at home
 
-### Important limitations
+<div align="center">
+  <img src="branding/folqio-symbol.svg" alt="Authentic Folqio vector brand mark, used for the app identity" width="90" />
+  <p><strong>Midnight navy · Slate · Mint</strong></p>
+  <p>Quiet surfaces, confident typography, comfortable controls, and a PDF page that stays the focus.</p>
+</div>
 
-- Android's current PDF engine is read-only. Its merge/extract/rotate operations create **rasterized** PDF copies; they do not preserve searchable text, forms or native annotations. Do not use those operations as secure redaction.
-- Android camera capture does not yet replicate the reference scanner's edge correction, multi-page capture and filters.
-- iOS PDF page operations retain PDF content rather than rendering to a bitmap, but complex PDF fidelity and forms require a broader compatibility test suite.
-- No Android OCR, searchable OCR text-layer insertion or persistent OCR indexing, encryption vault, text reflow, direct editing of original PDF text, creating password-protected PDFs, verified redaction, undo/redo editor, or signing workflow has been shipped yet.
-- Full 1:1 visual matching to prior image renders requires real-device screenshots and audited interaction states. Current screens follow the same brand rather than claiming pixel-level equivalence.
+The artwork above is the actual Folqio brand source. We only add device screenshots captured from the running app—not simulated or fictional product screens.
 
-## Development
+## Privacy is part of the experience
 
-Android requirements: Android SDK 36, JDK 17, Gradle 8.13, Android Gradle Plugin 8.13.2.
+Folqio does not require a user account, run an advertising SDK, or send your PDF documents to a Folqio server. PDF processing happens locally with Android and Apple platform frameworks. iOS optical character recognition uses Apple's on-device Vision framework. Documents are shared through your device's system share sheet.
 
-```sh
-gradle :android:testDebugUnitTest :android:lintDebug :android:assembleDebug :android:bundleRelease
-```
+## Android and iOS
 
-Android APK (debug): `android/build/outputs/apk/debug/android-debug.apk`, uploaded as a CI artifact.
+Both editions share Folqio's visual identity but use the strengths of their respective platforms.
 
-iOS requirements: Xcode, iOS 16+, [XcodeGen](https://github.com/yonaskolb/XcodeGen) as a build-time tool.
+**Android** brings a focused PDF reader, bookmarks, document library, photo-to-PDF creation, save/share, and page extraction, rotation, and merging as flattened copies.
 
-```sh
-swift ios/generate_app_icon.swift
-xcodegen generate --spec ios/project.yml --project ios
-xcodebuild build -project ios/Folqio.xcodeproj -scheme Folqio -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
-```
+**iPhone and iPad** add PDFKit text search, note and highlight annotations, multi-page document-camera scanning, on-device OCR, and page operations that retain PDF content.
 
-Build tooling downloads pinned dependencies at development/build time, and packages the runtime code into the apps. It does not fetch scripts, fonts or PDF processing code from a CDN while the app runs. The iOS app relies on Apple's on-device frameworks. Android uses system PDF/camera APIs.
+**Important:** Android's extracted, rotated, and merged PDF copies are rasterized. Those operations do not preserve searchable text, forms, or signatures and must not be treated as secure redaction. Some advanced PDF editing features remain on the roadmap.
 
-## Signing and distribution
+## Discover Folqio
 
-See [Store readiness and signing](docs/STORE_READINESS.md) for Google Play's API 36 target, Xcode 26+, secure upload key environment variables, AAB/IPA requirements, actual platform testing and privacy declarations. The branded iOS icon is rendered locally from vector source before XcodeGen; CI development APKs are debug-signed and **not** production artifacts.
+Explore the [latest downloads and release notes](https://github.com/bren-wp/Folqio/releases), learn about our [privacy and security design](docs/SECURITY.md), or see the [full feature roadmap](docs/ROADMAP.md).
 
-## Project docs
+Folqio is an evolving preview. Production signing, real-device certification, and exact screen-by-screen visual parity remain subject to validation. Releases explicitly identify development-only assets.
 
-- [Store review and signing requirements](docs/STORE_READINESS.md)
-- [Source audit notes](docs/CODE_AUDIT.md)
-- [Brand and design tokens](branding/BRAND.md)
-- [Design parity QA checklist](docs/DESIGN_QA.md)
-- [Manual interaction test checklist](docs/TESTING.md)
-- [Security and privacy](docs/SECURITY.md)
-- [Roadmap and release criteria](docs/ROADMAP.md)
+---
 
-MIT license — see [LICENSE](LICENSE).
+<sub>Folqio is an independent open-source project released under the [MIT License](LICENSE).</sub>
