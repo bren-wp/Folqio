@@ -12,7 +12,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
@@ -137,7 +137,7 @@ internal fun FolqioHome(
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             QuickAction("Open", Icons.Default.FolderOpen, Modifier.weight(1f), onOpen)
                             QuickAction("Scan", Icons.Default.CameraAlt, Modifier.weight(1f), onCamera)
-                            QuickAction("Photo", Icons.Default.Image, Modifier.weight(1f), onPhoto)
+                            QuickAction("Photo", Icons.Default.Photo, Modifier.weight(1f), onPhoto)
                         }
                     }
                 }
