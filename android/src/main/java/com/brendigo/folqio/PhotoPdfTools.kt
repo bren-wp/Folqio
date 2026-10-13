@@ -96,9 +96,8 @@ object PhotoPdfTools {
 
     private fun decodeBounded(context: Context, uri: Uri): Bitmap {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        context.contentResolver.openInputStream(uri)?.use {
-            BitmapFactory.decodeStream(it, null, bounds)
-        } ?: error("Cannot access photo")
+        val input = context.contentResolver.openInputStream(uri) ?: error("Cannot access photo")
+        input.use { BitmapFactory.decodeStream(it, null, bounds) }
         require(bounds.outWidth > 0 && bounds.outHeight > 0) { "Unreadable photo" }
         var sample = 1
         while (bounds.outWidth / sample > 1600 || bounds.outHeight / sample > 2200) sample *= 2
