@@ -24,9 +24,13 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.11.1'
+          gradle-version: '8.13'
+      - name: Install Android 16 SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36"
       - name: Run Android unit tests and package
-        run: gradle :android:testDebugUnitTest :android:assembleDebug
+        run: gradle :android:testDebugUnitTest :android:lintDebug :android:assembleDebug :android:bundleRelease
       - name: Verify APK artifact exists
         run: |
           test -s android/build/outputs/apk/debug/android-debug.apk
@@ -46,6 +50,15 @@ jobs:
         run: |
           brew install xcodegen
           xcodegen generate --spec ios/project.yml --project ios
+      - name: Verify Xcode 26+ SDK baseline
+        run: |
+          xcodebuild -version
+          python3 - <<'PY'
+          import re, subprocess
+          match = re.search(r"Xcode (\\d+)", subprocess.check_output(["xcodebuild", "-version"], text=True))
+          if not match or int(match.group(1)) < 26:
+              raise SystemExit("Xcode 26 or newer required")
+          PY
       - name: Compile app and unit tests for iOS simulator
         run: |
           xcodebuild build-for-testing \

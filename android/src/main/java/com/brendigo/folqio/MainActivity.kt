@@ -6,35 +6,26 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.IosShare
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,14 +34,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import androidx.compose.runtime.saveable.rememberSaveable
 import kotlin.math.roundToInt
 
 private val Midnight = Color(0xFF0B1321)
@@ -60,10 +49,22 @@ private val White = Color(0xFFF7FAFC)
 private val Muted = Color(0xFFA9B9C9)
 
 class MainActivity : ComponentActivity() {
+    private val incomingDocument = mutableStateOf<Uri?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val incomingUri = intent?.data?.takeIf { intent?.action == Intent.ACTION_VIEW }
-        setContent { FolqioApp(incomingUri) }
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+        )
+        incomingDocument.value = intent?.data?.takeIf { intent?.action == Intent.ACTION_VIEW }
+        setContent { FolqioApp(incomingDocument.value) }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        incomingDocument.value = intent.data?.takeIf { intent.action == Intent.ACTION_VIEW }
     }
 }
 
@@ -205,8 +206,11 @@ private fun FolqioApp(initialUri: Uri?) {
                     onMerge = { mergePicker.launch(arrayOf("application/pdf")) },
                     onSelect = { current = it },
                     onRemove = { removed ->
-                        library.remove(removed)
-                        recent = library.recent()
+                        if (library.remove(removed)) {
+                            recent = library.recent()
+                        } else {
+                            importError = "Could not delete this local file. Try again."
+                        }
                     },
                     onRename = { item, name ->
                         val changed = library.renameLabel(item, name)
@@ -220,9 +224,10 @@ private fun FolqioApp(initialUri: Uri?) {
                 PdfReader(
                     file = file, library = library, onBack = { current = null },
                     onRemove = {
-                        library.remove(file)
-                        recent = library.recent()
-                        current = null
+                        if (library.remove(file)) {
+                            recent = library.recent()
+                            current = null
+                        }
                     },
                     onCreated = { newFile ->
                         library.add(newFile)
@@ -294,6 +299,11 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, o
     var zoom by remember(file.uri) { mutableFloatStateOf(1f) }
     var bookmarked by remember(file.uri, page) { mutableStateOf(library.isBookmarked(file.uri, page)) }
 
+    DisposableEffect(image) {
+        val displayed = image
+        onDispose { displayed?.recycle() }
+    }
+
     LaunchedEffect(file.uri, page) {
         library.recordPage(file.uri, page)
         image = null
@@ -301,8 +311,14 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, o
         zoom = 1f
         try {
             val rendered = PdfPages.render(context.applicationContext, Uri.parse(file.uri), page)
-            image = rendered.bitmap
             count = rendered.count
+            val safePage = PdfPageBounds.clamp(page, rendered.count)
+            if (safePage != page) {
+                rendered.bitmap.recycle()
+                page = safePage
+            } else {
+                image = rendered.bitmap
+            }
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
@@ -310,7 +326,7 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, o
         }
     }
 
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
         Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = White) }
             Column(Modifier.weight(1f)) {
@@ -340,7 +356,7 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, o
                 error != null -> Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                     Text(error!!, color = White)
                     Spacer(Modifier.height(15.dp))
-                    OutlinedButton(onClick = onRemove) { Text("Remove from recent files") }
+                    OutlinedButton(onClick = onRemove) { Text("Remove from Folqio") }
                 }
                 image == null -> CircularProgressIndicator(color = Mint)
                 else -> Image(

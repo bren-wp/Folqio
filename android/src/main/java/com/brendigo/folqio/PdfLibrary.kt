@@ -13,7 +13,8 @@ data class LocalPdf(val uri: String, val name: String) {
 }
 
 class PdfLibrary(context: Context) {
-    private val preferences = context.getSharedPreferences("folqio_library_v1", Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val preferences = appContext.getSharedPreferences("folqio_library_v1", Context.MODE_PRIVATE)
 
     fun recent(): List<LocalPdf> {
         val entries = runCatching { JSONArray(preferences.getString("recent", "[]")) }.getOrDefault(JSONArray())
@@ -27,19 +28,66 @@ class PdfLibrary(context: Context) {
         }
     }
 
+    /**
+     * Never evict locally created documents merely because the recent list exceeded 30.
+     * External provider shortcuts are limited, but created PDFs stay discoverable.
+     */
     fun add(file: LocalPdf) {
-        val recent = (listOf(file) + recent().filterNot { it.uri == file.uri }).take(30)
-        val entries = JSONArray()
-        recent.forEach { entries.put(JSONObject().put("uri", it.uri).put("name", it.name)) }
-        preferences.edit().putString("recent", entries.toString()).apply()
+        val all = listOf(file) + recent().filterNot { it.uri == file.uri }
+        var externalCount = 0
+        saveRecent(all.filter { item ->
+            if (generatedFileName(item.uri) != null) true
+            else ++externalCount <= 30
+        })
     }
 
-    fun remove(file: LocalPdf) {
-        val entries = JSONArray()
-        recent().filterNot { it.uri == file.uri }.forEach {
-            entries.put(JSONObject().put("uri", it.uri).put("name", it.name))
+    /**
+     * Removing an imported document only removes the shortcut; an app-created PDF
+     * is permanently deleted after explicit confirmation in the UI.
+     */
+    fun remove(file: LocalPdf): Boolean {
+        val ownedName = generatedFileName(file.uri)
+        if (ownedName != null) {
+            val ownedFile = java.io.File(appContext.filesDir, "created/$ownedName")
+            if (ownedFile.exists() && !ownedFile.delete()) return false
         }
-        preferences.edit().putString("recent", entries.toString()).apply()
+
+        saveRecent(recent().filterNot { it.uri == file.uri })
+        val favorites = preferences.getStringSet("favorites", emptySet()).orEmpty().toMutableSet()
+        favorites.remove(file.uri)
+        val bookmarks = preferences.getStringSet("bookmarks", emptySet()).orEmpty()
+            .filterNot { it.startsWith("${file.uri}#") }.toSet()
+        preferences.edit()
+            .putStringSet("favorites", favorites)
+            .putStringSet("bookmarks", bookmarks)
+            .remove(lastPageKey(file.uri))
+            .apply()
+        return true
+    }
+
+    private fun generatedFileName(uriString: String): String? {
+        val uri = runCatching { Uri.parse(uriString) }.getOrNull() ?: return null
+        if (uri.scheme != "content" || uri.authority != "${appContext.packageName}.files") {
+            return null
+        }
+        if (uri.pathSegments.size != 2 || uri.pathSegments[0] != "created_pdfs") return null
+        val name = uri.pathSegments[1]
+        return name.takeIf { isGeneratedPdfFileName(it) }
+    }
+
+    companion object {
+        fun isGeneratedPdfFileName(filename: String): Boolean =
+            Regex(
+                "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\.pdf"
+            ).matches(filename)
+    }
+
+    private fun saveRecent(documents: List<LocalPdf>) {
+        val items = JSONArray()
+        documents.forEach { entry ->
+            items.put(JSONObject().put("uri", entry.uri).put("name", entry.name))
+        }
+        preferences.edit().putString("recent", items.toString()).apply()
     }
 
     /**
@@ -49,18 +97,10 @@ class PdfLibrary(context: Context) {
         val name = requested.trim().take(160)
         if (name.isBlank() || name.any { it == '/' || it == '\\' || it == '\n' || it == '\r' }) return false
         val normalized = if (LocalPdf.isPdfFilename(name)) name else "$name.pdf"
-        val entries = JSONArray()
-        var found = false
-        recent().forEach { item ->
-            if (item.uri == file.uri) {
-                entries.put(JSONObject().put("uri", item.uri).put("name", normalized))
-                found = true
-            } else {
-                entries.put(JSONObject().put("uri", item.uri).put("name", item.name))
-            }
-        }
-        if (found) preferences.edit().putString("recent", entries.toString()).apply()
-        return found
+        val documents = recent()
+        if (documents.none { it.uri == file.uri }) return false
+        saveRecent(documents.map { if (it.uri == file.uri) it.copy(name = normalized) else it })
+        return true
     }
 
     private fun lastPageKey(uri: String): String {

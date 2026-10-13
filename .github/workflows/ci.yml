@@ -26,9 +26,18 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.11.1'
+          gradle-version: '8.13'
+      - name: Install Android 16 SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36"
       - name: Verify native Android app
-        run: gradle :android:testDebugUnitTest :android:assembleDebug --stacktrace
+        run: gradle :android:testDebugUnitTest :android:assembleDebug :android:lintDebug :android:bundleRelease --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: folqio-release-aab-unsigned
+          path: android/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: folqio-android-debug
@@ -41,6 +50,16 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Verify Apple SDK baseline
+        run: |
+          xcodebuild -version
+          python3 - <<'PY'
+          import re, subprocess
+          output = subprocess.check_output(["xcodebuild", "-version"], text=True)
+          match = re.search(r"Xcode (\\d+)", output)
+          if not match or int(match.group(1)) < 26:
+              raise SystemExit("App Store uploads in 2026 require Xcode 26 or newer.")
+          PY
       - name: Generate Xcode project
         run: |
           brew install xcodegen

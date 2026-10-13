@@ -56,6 +56,7 @@ internal fun FolqioHome(
     var renaming by remember { mutableStateOf<LocalPdf?>(null) }
     var renameText by remember { mutableStateOf("") }
     var invalidRename by remember { mutableStateOf(false) }
+    var removing by remember { mutableStateOf<LocalPdf?>(null) }
     val filtered = files.filter {
         (tab != FolqioTab.FAVORITES || isFavorite(it.uri)) &&
             it.name.contains(query, ignoreCase = true)
@@ -83,6 +84,27 @@ internal fun FolqioHome(
                 }) { Text("Save") }
             },
             dismissButton = { TextButton(onClick = { renaming = null }) { Text("Cancel") } }
+        )
+    }
+    if (removing != null) {
+        AlertDialog(
+            onDismissRequest = { removing = null },
+            title = { Text("Remove document?") },
+            text = {
+                Text(
+                    "Files created in Folqio are permanently deleted. " +
+                    "Imported PDFs remain at their original location."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    removing?.let(onRemove)
+                    removing = null
+                }) { Text("Remove") }
+            },
+            dismissButton = {
+                TextButton(onClick = { removing = null }) { Text("Cancel") }
+            }
         )
     }
     Scaffold(
@@ -233,8 +255,8 @@ internal fun FolqioHome(
                             }) {
                                 Icon(Icons.Default.Edit, "Rename display label", tint = muted)
                             }
-                            IconButton(onClick = { onRemove(file) }) {
-                                Icon(Icons.Default.Close, "Remove from recents", tint = muted)
+                            IconButton(onClick = { removing = file }) {
+                                Icon(Icons.Default.Close, "Remove document", tint = muted)
                             }
                         }
                     }
