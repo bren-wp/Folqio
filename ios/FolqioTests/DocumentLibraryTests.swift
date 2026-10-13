@@ -167,8 +167,16 @@ final class DocumentToolsTests: XCTestCase {
         XCTAssertNotEqual(saved.id, original.id)
         XCTAssertEqual(try Data(contentsOf: originalURL), originalBytes)
         XCTAssertEqual(PDFDocument(url: originalURL)?.page(at: 0)?.annotations.count, 0)
-        XCTAssertEqual(savedPDF.page(at: 0)?.annotations.count, 1)
-        XCTAssertEqual(savedPDF.page(at: 0)?.annotations.first?.contents, "Private note")
+        // PDFKit can persist a note together with its associated Popup annotation.
+        // Verify the meaningful note count instead of rejecting the companion popup.
+        let annotations = try XCTUnwrap(savedPDF.page(at: 0)?.annotations)
+        let noteType = PDFAnnotationSubtype.text.rawValue
+        let popupType = PDFAnnotationSubtype.popup.rawValue
+        let notes = annotations.filter { $0.type == noteType }
+        XCTAssertEqual(notes.count, 1, "Unexpected PDF annotations: \(annotations.map { $0.type ?? "nil" })")
+        XCTAssertEqual(notes.first?.contents, "Private note")
+        XCTAssertTrue(annotations.allSatisfy { $0.type == noteType || $0.type == popupType },
+                      "Unexpected additional annotation types: \(annotations.map { $0.type ?? "nil" })")
     }
 }
 
