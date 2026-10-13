@@ -29,7 +29,8 @@ Folqio puts your documents first. Its dark midnight-navy interface, carefully ba
 | **📖 Read with ease** | Open PDFs with confidence, zoom comfortably, and pick up exactly where you left off. |
 | **📷 Capture documents** | Turn photos into PDFs. The iOS document camera supports multi-page scanning with automatic page detection. |
 | **📁 Stay organized** | Find documents by name, rename library labels, save favorites, and keep recent files close. |
-| **🧩 Work with pages** | Create multi-page PDFs, extract or rotate pages, and combine documents. Available page tools vary by platform. |\n| **✍️ Annotate with confidence** | On iOS, add text overlays, notes, and highlights as separate PDF copies while keeping your original intact. |
+| **🧩 Work with pages** | Create multi-page PDFs, extract or rotate pages, and combine documents. Available page tools vary by platform. |
+| **✍️ Annotate with confidence** | On iOS, add text overlays, notes, and highlights as separate PDF copies while keeping your original intact. |
 | **🔎 Find what matters** | Search selectable PDF text and recognize scanned text on iOS with on-device OCR. |
 | **↗️ Share on your terms** | Export selected PDFs to a ZIP archive or share a document whenever you choose. |
 | **🌍 Choose your language** | 25 choices for navigation and settings, including Croatian. |
