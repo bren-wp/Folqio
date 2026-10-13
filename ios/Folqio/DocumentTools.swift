@@ -4,11 +4,13 @@ import PDFKit
 enum PDFToolError: LocalizedError {
     case invalidPages
     case invalidDocument
+    case encryptedAnnotationCopy
 
     var errorDescription: String? {
         switch self {
         case .invalidPages: return "Choose one or more valid pages."
         case .invalidDocument: return "The PDF cannot be processed."
+        case .encryptedAnnotationCopy: return "Password-protected PDFs cannot yet be re-saved as annotated copies without changing their protection."
         }
     }
 }
@@ -21,6 +23,7 @@ enum DocumentTools {
     /// A fresh representation also keeps each edit isolated if persistence fails.
     static func annotatedCopy(_ source: PDFDocument, index: Int,
                               annotation: PDFAnnotation) throws -> PDFDocument {
+        guard !source.isEncrypted else { throw PDFToolError.encryptedAnnotationCopy }
         guard !source.isLocked, index >= 0, index < source.pageCount,
               let representation = source.dataRepresentation(),
               let copy = PDFDocument(data: representation),
