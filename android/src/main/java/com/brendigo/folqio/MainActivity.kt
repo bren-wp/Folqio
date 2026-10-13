@@ -41,11 +41,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
-private val Midnight = Color(0xFF0B1321)
-private val Slate = Color(0xFF1A2433)
-private val Mint = Color(0xFF22D3A7)
-private val White = Color(0xFFF7FAFC)
-private val Muted = Color(0xFFA9B9C9)
 
 class MainActivity : ComponentActivity() {
     private val incomingDocument = mutableStateOf<Uri?>(null)
@@ -208,10 +203,10 @@ private fun FolqioApp(initialUri: Uri?) {
     }
 
     MaterialTheme(colorScheme = darkColorScheme(
-        primary = Mint, onPrimary = Midnight, background = Midnight, onBackground = White,
-        surface = Slate, onSurface = White, surfaceVariant = Slate
+        primary = FolqioPalette.mint, onPrimary = FolqioPalette.midnight, background = FolqioPalette.midnight, onBackground = FolqioPalette.pearl,
+        surface = FolqioPalette.slate, onSurface = FolqioPalette.pearl, surfaceVariant = FolqioPalette.slate
     )) {
-        Surface(modifier = Modifier.fillMaxSize(), color = Midnight) {
+        Surface(modifier = Modifier.fillMaxSize(), color = FolqioPalette.midnight) {
             val file = current
             if (file == null) {
                 FolqioHome(
@@ -394,19 +389,19 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, reopenLastPage: Boole
 
     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
         Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = White) }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = FolqioPalette.pearl) }
             Column(Modifier.weight(1f)) {
-                Text(file.name, color = White, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold)
-                Text(if (count > 0) "${page + 1} / $count" else "Opening…", color = Muted)
+                Text(file.name, color = FolqioPalette.pearl, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold)
+                Text(if (count > 0) "${page + 1} / $count" else "Opening…", color = FolqioPalette.muted)
             }
             IconButton(onClick = { bookmarked = library.toggleBookmark(file.uri, page) }) {
-                Icon(if (bookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, "Bookmark page", tint = Mint)
+                Icon(if (bookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, "Bookmark page", tint = FolqioPalette.mint)
             }
             IconButton(
                 onClick = { saveLauncher.launch(file.name) },
                 enabled = !savingCopy
             ) {
-                Icon(Icons.Default.SaveAlt, "Save PDF copy", tint = Mint)
+                Icon(Icons.Default.SaveAlt, "Save PDF copy", tint = FolqioPalette.mint)
             }
             IconButton(onClick = {
                 val share = Intent(Intent.ACTION_SEND).apply {
@@ -415,16 +410,16 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, reopenLastPage: Boole
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
                 context.startActivity(Intent.createChooser(share, "Share PDF"))
-            }) { Icon(Icons.Default.IosShare, "Share PDF", tint = White) }
+            }) { Icon(Icons.Default.IosShare, "Share PDF", tint = FolqioPalette.pearl) }
         }
         Box(Modifier.fillMaxWidth().weight(1f).background(Color(0xFF101C2B)), contentAlignment = Alignment.Center) {
             when {
                 error != null -> Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
-                    Text(error!!, color = White)
+                    Text(error!!, color = FolqioPalette.pearl)
                     Spacer(Modifier.height(15.dp))
                     OutlinedButton(onClick = { if (confirmRemoval) confirmRemove = true else onRemove() }) { Text("Remove document") }
                 }
-                image == null -> CircularProgressIndicator(color = Mint)
+                image == null -> CircularProgressIndicator(color = FolqioPalette.mint)
                 else -> Image(
                     bitmap = image!!.asImageBitmap(), contentDescription = "PDF page ${page + 1}",
                     contentScale = ContentScale.Fit,
@@ -436,9 +431,9 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, reopenLastPage: Boole
                 )
             }
         }
-        if (savingCopy || exporting) LinearProgressIndicator(Modifier.fillMaxWidth(), color = Mint)
+        if (savingCopy || exporting) LinearProgressIndicator(Modifier.fillMaxWidth(), color = FolqioPalette.mint)
         if (saveInfo != null) {
-            Text(saveInfo!!, color = Muted, modifier = Modifier.padding(horizontal = 14.dp))
+            Text(saveInfo!!, color = FolqioPalette.muted, modifier = Modifier.padding(horizontal = 14.dp))
         }
         if (exportError != null) Text(exportError!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp))
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp),
@@ -449,7 +444,7 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, reopenLastPage: Boole
                 modifier = Modifier.weight(1f)) { Text("Rotate copy") }
         }
         Text("Copies are flattened images, not editable PDF text.",
-            style = MaterialTheme.typography.labelSmall, color = Muted,
+            style = MaterialTheme.typography.labelSmall, color = FolqioPalette.muted,
             modifier = Modifier.padding(start = 14.dp, bottom = 3.dp))
         if (count > 1) {
             Slider(
@@ -463,11 +458,11 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, reopenLastPage: Boole
             horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { page -= 1 }, enabled = page > 0) {
-                Icon(Icons.Default.ChevronLeft, "Previous page", tint = if (page > 0) Mint else Muted)
+                Icon(Icons.Default.ChevronLeft, "Previous page", tint = if (page > 0) FolqioPalette.mint else FolqioPalette.muted)
             }
-            Text(if (count > 0) "Page ${page + 1} of $count" else "Folqio", color = White)
+            Text(if (count > 0) "Page ${page + 1} of $count" else "Folqio", color = FolqioPalette.pearl)
             IconButton(onClick = { page += 1 }, enabled = count > 0 && page < count - 1) {
-                Icon(Icons.Default.ChevronRight, "Next page", tint = if (count > 0 && page < count - 1) Mint else Muted)
+                Icon(Icons.Default.ChevronRight, "Next page", tint = if (count > 0 && page < count - 1) FolqioPalette.mint else FolqioPalette.muted)
             }
         }
     }

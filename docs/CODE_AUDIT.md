@@ -24,3 +24,10 @@ No line of code or UI screen is considered verified as pixel-perfect until devic
 - Unneeded persisted provider read grants are removed from PDF picker and merge flows.
 - Pure policy tests cover PDF header checks, safe document naming and import limits.
 - Targeted source cleanup is not proof of fully eliminated dead code or pixel-perfect design parity.
+
+## v0.1.8 audited visual tokens and executed simulator QA
+
+- Consolidated repeated Android dark/mint palette literals into `FolqioPalette` used across Reader, Home and Settings. This eliminates 14 duplicate color declarations.
+- CI no longer treats iOS test **compilation** as a successful test **execution**; simulator boot and XCTest run are now mandatory, including release checks.
+- Real Android screenshots can be captured through a manually invoked GitHub workflow with visual navigation assertions. Only authentic PNGs may be included in the public README.
+- A full semantic dead-code audit and pixel overlay verification require additional device instrumentation; code compiles, static checks and scoped source review do not prove either automatically.

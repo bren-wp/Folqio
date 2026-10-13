@@ -26,7 +26,7 @@ Folqio puts your documents first. Its dark midnight-navy interface, carefully ba
 
 | | |
 | --- | --- |
-| **📖 Read with ease** | Open PDFs from your device, browse and zoom comfortably, and return to where you left off. |
+| **📖 Read with ease** | Open PDFs with confidence, zoom comfortably, and pick up exactly where you left off. |
 | **📷 Capture documents** | Turn photos into PDFs. The iOS document camera supports multi-page scanning with automatic page detection. |
 | **📁 Stay organized** | Find documents by name, rename library labels, save favorites, and keep recent files close. |
 | **🧩 Work with pages** | Create multi-page PDFs, extract or rotate pages, and combine documents. Available page tools vary by platform. |

@@ -63,7 +63,7 @@ jobs:
 
   ios:
     runs-on: macos-26
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Generate local Folqio App Store icon
@@ -89,6 +89,8 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             -quiet
+      - name: Execute iOS unit tests on a simulator
+        run: bash scripts/run-ios-tests.sh
 
   publish:
     name: Publish debug-only prerelease

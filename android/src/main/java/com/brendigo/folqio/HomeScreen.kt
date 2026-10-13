@@ -20,17 +20,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
-private val midnight = Color(0xFF0B1321)
-private val slate = Color(0xFF1A2433)
-private val mint = Color(0xFF22D3A7)
-private val pearl = Color(0xFFF7FAFC)
-private val muted = Color(0xFFA9B9C9)
 
 private enum class FolqioTab { HOME, FILES, FAVORITES, SETTINGS }
 
@@ -115,9 +109,9 @@ internal fun FolqioHome(
         )
     }
     Scaffold(
-        containerColor = midnight,
+        containerColor = FolqioPalette.midnight,
         bottomBar = {
-            NavigationBar(containerColor = slate) {
+            NavigationBar(containerColor = FolqioPalette.slate) {
                 listOf(
                     Triple(FolqioTab.HOME, Icons.Default.Home, tr("home")),
                     Triple(FolqioTab.FILES, Icons.Default.Folder, tr("files")),
@@ -129,8 +123,8 @@ internal fun FolqioHome(
                         icon = { Icon(icon, contentDescription = title) },
                         label = { Text(title) },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = midnight, selectedTextColor = mint,
-                            indicatorColor = mint, unselectedIconColor = muted, unselectedTextColor = muted
+                            selectedIconColor = FolqioPalette.midnight, selectedTextColor = FolqioPalette.mint,
+                            indicatorColor = FolqioPalette.mint, unselectedIconColor = FolqioPalette.muted, unselectedTextColor = FolqioPalette.muted
                         )
                     )
                 }
@@ -149,16 +143,16 @@ internal fun FolqioHome(
                     Spacer(Modifier.width(11.dp))
                     Column {
                         Text("FOLQIO", style = MaterialTheme.typography.headlineMedium,
-                            color = pearl, fontWeight = FontWeight.Black)
-                        Text("Your documents. Your device.", color = muted,
+                            color = FolqioPalette.pearl, fontWeight = FontWeight.Black)
+                        Text("Your documents. Your device.", color = FolqioPalette.muted,
                             style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
 
-            if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth(), color = mint) }
+            if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth(), color = FolqioPalette.mint) }
             if (error != null) item { Text(error, color = MaterialTheme.colorScheme.error) }
-            if (notice != null) item { Text(notice, color = mint) }
+            if (notice != null) item { Text(notice, color = FolqioPalette.mint) }
 
             if (tab == FolqioTab.SETTINGS) {
                 item {
@@ -176,13 +170,13 @@ internal fun FolqioHome(
             } else {
                 if (tab == FolqioTab.HOME) {
                     item {
-                        Card(colors = CardDefaults.cardColors(containerColor = slate),
+                        Card(colors = CardDefaults.cardColors(containerColor = FolqioPalette.slate),
                             shape = RoundedCornerShape(20.dp)) {
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Text("Your documents, in your hands.",
                                     style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold, color = pearl)
-                                Text("Read PDFs and create new documents locally.", color = muted)
+                                    fontWeight = FontWeight.Bold, color = FolqioPalette.pearl)
+                                Text("Read PDFs and create new documents locally.", color = FolqioPalette.muted)
                                 Button(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
                                     Icon(Icons.Default.FolderOpen, contentDescription = null)
                                     Spacer(Modifier.width(8.dp))
@@ -192,7 +186,7 @@ internal fun FolqioHome(
                         }
                     }
                     item {
-                        Text("Quick actions", color = pearl,
+                        Text("Quick actions", color = FolqioPalette.pearl,
                             style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(10.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -203,17 +197,17 @@ internal fun FolqioHome(
                         Spacer(Modifier.height(9.dp))
                         Card(
                             onClick = onMerge,
-                            colors = CardDefaults.cardColors(containerColor = slate),
+                            colors = CardDefaults.cardColors(containerColor = FolqioPalette.slate),
                             shape = RoundedCornerShape(15.dp)
                         ) {
                             Row(Modifier.fillMaxWidth().padding(15.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.CallMerge, contentDescription = null, tint = mint)
+                                Icon(Icons.Default.CallMerge, contentDescription = null, tint = FolqioPalette.mint)
                                 Spacer(Modifier.width(10.dp))
                                 Column {
-                                    Text(tr("merge"), color = pearl, fontWeight = FontWeight.SemiBold)
+                                    Text(tr("merge"), color = FolqioPalette.pearl, fontWeight = FontWeight.SemiBold)
                                     Text("2–5 files · flattened output · max 50 pages",
-                                        color = muted, style = MaterialTheme.typography.bodySmall)
+                                        color = FolqioPalette.muted, style = MaterialTheme.typography.bodySmall)
                                 }
                             }
                         }
@@ -221,7 +215,7 @@ internal fun FolqioHome(
                 }
                 item {
                     Text(if (tab == FolqioTab.FAVORITES) tr("favorites") else tr("recent"),
-                        color = pearl, style = MaterialTheme.typography.titleLarge,
+                        color = FolqioPalette.pearl, style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(10.dp))
                     OutlinedTextField(
@@ -238,24 +232,24 @@ internal fun FolqioHome(
                             if (files.isEmpty()) "Open or scan a document to see it here."
                             else if (tab == FolqioTab.FAVORITES) "No favorites yet."
                             else "No matching documents.",
-                            color = muted
+                            color = FolqioPalette.muted
                         )
                     }
                 }
                 items(filtered, key = { it.uri }) { file ->
                     Card(onClick = { onSelect(file) },
-                        colors = CardDefaults.cardColors(containerColor = slate),
+                        colors = CardDefaults.cardColors(containerColor = FolqioPalette.slate),
                         shape = RoundedCornerShape(15.dp)) {
                         Row(Modifier.fillMaxWidth().padding(start = 14.dp, top = 8.dp,
                             end = 5.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                             PdfThumbnail(file.uri)
                             Spacer(Modifier.width(12.dp))
-                            Text(file.name, color = pearl, maxLines = 2,
+                            Text(file.name, color = FolqioPalette.pearl, maxLines = 2,
                                 overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                             var menuOpen by remember(file.uri) { mutableStateOf(false) }
                             Box {
                                 IconButton(onClick = { menuOpen = true }) {
-                                    Icon(Icons.Default.MoreVert, "Document options", tint = muted)
+                                    Icon(Icons.Default.MoreVert, "Document options", tint = FolqioPalette.muted)
                                 }
                                 DropdownMenu(
                                     expanded = menuOpen,
@@ -292,13 +286,13 @@ internal fun FolqioHome(
 private fun QuickAction(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector,
                         modifier: Modifier = Modifier, onClick: () -> Unit) {
     Card(onClick = onClick, modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = slate),
+        colors = CardDefaults.cardColors(containerColor = FolqioPalette.slate),
         shape = RoundedCornerShape(15.dp)) {
         Column(Modifier.fillMaxWidth().padding(vertical = 15.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            Icon(icon, contentDescription = null, tint = mint, modifier = Modifier.size(25.dp))
-            Text(label, color = pearl, style = MaterialTheme.typography.labelLarge)
+            Icon(icon, contentDescription = null, tint = FolqioPalette.mint, modifier = Modifier.size(25.dp))
+            Text(label, color = FolqioPalette.pearl, style = MaterialTheme.typography.labelLarge)
         }
     }
 }
