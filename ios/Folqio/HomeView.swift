@@ -4,6 +4,8 @@ import PhotosUI
 import VisionKit
 import PDFKit
 
+private enum MainSection { case home, files, favorites }
+
 struct HomeView: View {
     @EnvironmentObject private var library: DocumentLibrary
     @State private var isImporterPresented = false
@@ -14,11 +16,12 @@ struct HomeView: View {
     @State private var showingScanner = false
     @State private var showingMerge = false
     @State private var onlyFavorites = false
+    @State private var section: MainSection = .home
     @State private var selectedPhoto: PhotosPickerItem?
 
     private var filtered: [DocumentItem] {
         library.documents.filter {
-            (!onlyFavorites || $0.isFavorite) &&
+            (!(onlyFavorites || section == .favorites) || $0.isFavorite) &&
             (query.isEmpty || $0.filename.localizedCaseInsensitiveContains(query))
         }
     }
@@ -49,6 +52,7 @@ struct HomeView: View {
                         }
                         .padding(.top, 22)
 
+                        if section == .home {
                         FolqioCard {
                             VStack(alignment: .leading, spacing: 14) {
                                 Image(systemName: "folder.badge.plus")
@@ -103,6 +107,8 @@ struct HomeView: View {
                                 .foregroundStyle(FolqioColors.muted)
                         }
 
+                        }
+
                         HStack(spacing: 12) {
                             Button("All files") { onlyFavorites = false }
                                 .foregroundStyle(onlyFavorites ? FolqioColors.muted : FolqioColors.mint)
@@ -112,7 +118,7 @@ struct HomeView: View {
                         .font(.subheadline.weight(.medium))
 
                         HStack {
-                            Text("Recent files")
+                            Text(section == .favorites ? "Favorites" : section == .files ? "Documents" : "Recent files")
                                 .font(.title2.bold())
                                 .foregroundStyle(FolqioColors.pearl)
                             Spacer()
@@ -186,6 +192,9 @@ struct HomeView: View {
                     .padding(.bottom, 30)
                 }
             }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                bottomNavigation
+            }
             .toolbar(.hidden, for: .navigationBar)
             .fileImporter(isPresented: $isImporterPresented, allowedContentTypes: [.pdf]) { result in
                 switch result {
@@ -249,6 +258,36 @@ struct HomeView: View {
         }
         .tint(FolqioColors.mint)
     }
+
+    private var bottomNavigation: some View {
+        HStack(spacing: 2) {
+            BottomNavigationItem(title: "Home", symbol: "house.fill", active: section == .home) {
+                section = .home
+                onlyFavorites = false
+            }
+            BottomNavigationItem(title: "Files", symbol: "folder", active: section == .files) {
+                section = .files
+                onlyFavorites = false
+            }
+            BottomNavigationItem(title: "Scan", symbol: "camera", active: false) {
+                if VNDocumentCameraViewController.isSupported {
+                    showingScanner = true
+                } else {
+                    importError = "Document scanning requires a camera-enabled iPhone or iPad."
+                }
+            }
+            BottomNavigationItem(title: "Favorites", symbol: "star", active: section == .favorites) {
+                section = .favorites
+                onlyFavorites = true
+            }
+            BottomNavigationItem(title: "Settings", symbol: "gearshape", active: false) {
+                showPrivacy = true
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(FolqioColors.slate)
+    }
 }
 
 private struct PrivacyView: View {
@@ -288,5 +327,27 @@ private struct QuickAction: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
         .background(FolqioColors.slate, in: RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+private struct BottomNavigationItem: View {
+    let title: String
+    let symbol: String
+    let active: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 5) {
+                Image(systemName: symbol)
+                    .font(.system(size: 19))
+                Text(title)
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .foregroundStyle(active ? FolqioColors.mint : FolqioColors.muted)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 5)
+        }
+        .buttonStyle(.plain)
     }
 }
