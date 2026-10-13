@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,14 +45,43 @@ internal fun FolqioHome(
     onPhoto: () -> Unit,
     onSelect: (LocalPdf) -> Unit,
     onRemove: (LocalPdf) -> Unit,
+    onRename: (LocalPdf, String) -> Boolean,
     busy: Boolean,
     error: String?
 ) {
     var tab by remember { mutableStateOf(FolqioTab.HOME) }
     var query by remember { mutableStateOf("") }
+    var renaming by remember { mutableStateOf<LocalPdf?>(null) }
+    var renameText by remember { mutableStateOf("") }
+    var invalidRename by remember { mutableStateOf(false) }
     val filtered = files.filter {
         (tab != FolqioTab.FAVORITES || isFavorite(it.uri)) &&
             it.name.contains(query, ignoreCase = true)
+    }
+    if (renaming != null) {
+        AlertDialog(
+            onDismissRequest = { renaming = null; invalidRename = false },
+            title = { Text("Rename document label") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = renameText, onValueChange = { renameText = it },
+                        label = { Text("Display name") }, singleLine = true
+                    )
+                    if (invalidRename) Text("Use a valid PDF name.", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val target = renaming
+                    if (target != null && onRename(target, renameText)) {
+                        renaming = null
+                        invalidRename = false
+                    } else invalidRename = true
+                }) { Text("Save") }
+            },
+            dismissButton = { TextButton(onClick = { renaming = null }) { Text("Cancel") } }
+        )
     }
     Scaffold(
         containerColor = midnight,
@@ -176,6 +206,13 @@ internal fun FolqioHome(
                             IconButton(onClick = { onFavorite(file.uri) }) {
                                 Icon(if (isFavorite(file.uri)) Icons.Default.Star else Icons.Default.StarBorder,
                                     contentDescription = "Toggle favorite", tint = mint)
+                            }
+                            IconButton(onClick = {
+                                renaming = file
+                                renameText = file.name
+                                invalidRename = false
+                            }) {
+                                Icon(Icons.Default.Edit, "Rename display label", tint = muted)
                             }
                             IconButton(onClick = { onRemove(file) }) {
                                 Icon(Icons.Default.Close, "Remove from recents", tint = muted)
