@@ -31,7 +31,7 @@
 - Keep locally generated documents in the library beyond the external-shortcut limit.
 - Explicit removal confirmation; delete only app-generated PDFs inside a validated sandbox path.
 - Shared serialization for recent-document metadata; remove unused imports and unused helper overloads.
-- Add Google Play signing inputs and native CI lint/AAB checks, plus Apple privacy manifest.
+- Add Google Play signing inputs and native CI lint/AAB checks, plus Apple privacy manifest and deterministic 1024px icon generation.
 
 **Open release blockers:** physical-device QA, full screenshot parity, production icon sets, actual signed Play AAB and signed iOS archive, App Store listing assets, privacy disclosures, accessibility audit and advanced PDF editor parity.
 

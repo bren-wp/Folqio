@@ -30,6 +30,10 @@ for prohibited in ("android.permission.INTERNET", "READ_EXTERNAL_STORAGE", "MANA
         issues.append("Unexpected Android permission " + prohibited)
 if "macos-26" not in ci or "bundleRelease" not in ci or "lintDebug" not in ci:
     issues.append("CI is missing store-compliance gates")
+if not (root / "ios/generate_app_icon.swift").is_file():
+    issues.append("App Store icon generator missing")
+if not (root / "android/src/main/res/mipmap-anydpi-v26/ic_launcher.xml").is_file():
+    issues.append("Android adaptive launcher icon missing")
 if not (root / "ios/Folqio/PrivacyInfo.xcprivacy").is_file():
     issues.append("Apple privacy manifest missing")
 if "MARKETING_VERSION: \"0.1.3\"" not in project or 'versionName = "0.1.3"' not in gradle:

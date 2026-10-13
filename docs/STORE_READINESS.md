@@ -11,14 +11,14 @@ This project is a **development preview**, not proof of approval from Google or 
 - Do not store keystores, export certificates, passwords, API keys, or private signing material in Git commits, CI logs, release assets or user-visible chat.
 - Verify foreground/background, edge-to-edge and predictive back, insets, document pickers, photo merge, revoked grants, large/malformed PDF handling on API 26 and 36 devices.
 - Complete Play Console Data safety, app content, privacy policy, accessibility, age rating, store listing, developer identity and content declarations. Keep descriptions restricted to implemented features.
-- Provide adaptive app icon and Play listing artwork, including 512-pixel store icon, along with accurate screenshots. Visual 1:1 reference acceptance is still pending.
+- An adaptive launcher icon is included; Play listing artwork (including a 512-pixel store icon) and accurate screenshots still require review. Visual 1:1 reference acceptance is still pending.
 
 ## Apple / App Store
 
 - As of April 28, 2026, App Store Connect uploads must be built with **Xcode 26+ and the iOS 26 SDK+**. The CI uses GitHub macOS 26.
 - The SwiftUI/PDFKit target supports iOS 16+, but deployment and build SDK are separate constraints.
 - Apple Development/Distribution signing requires the real Apple Developer team, provisioning profiles, app identifier and entitlement validation. `DEVELOPMENT_TEAM` is intentionally not committed.
-- Generate a valid `Assets.xcassets/AppIcon.appiconset` (1024×1024 App Store icon), iPhone/iPad launch and actual feature screenshots. **Not yet supplied**; this blocks readiness.
+- `swift ios/generate_app_icon.swift` generates a 1024×1024 icon locally from the Folqio SVG concept. Validate that the generated **opaque** app icon meets Apple's asset rules; actual iPhone/iPad screenshots and visual comparisons remain missing.
 - Check every used required-reason API, bundled SDK and `PrivacyInfo.xcprivacy` declaration against the actual archive. Apple can reject invalid or incomplete manifests.
 - Provide age rating, updated app privacy answers, EU DSA trader status where relevant, store listing, support/privacy policy URLs, accessibility and TestFlight QA.
 - Test camera scanning and Files/Photos permissions on actual iPhones/iPads, including rotation, VoiceOver and Dynamic Type. Native CI currently compiles tests but may skip execution if no booted simulator is present.

@@ -55,6 +55,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - name: Generate local Folqio App Store icon
+        run: swift ios/generate_app_icon.swift
       - name: Generate Xcode project
         run: |
           brew install xcodegen

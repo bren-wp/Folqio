@@ -50,6 +50,7 @@ Android APK (debug): `android/build/outputs/apk/debug/android-debug.apk`, upload
 iOS requirements: Xcode, iOS 16+, [XcodeGen](https://github.com/yonaskolb/XcodeGen) as a build-time tool.
 
 ```sh
+swift ios/generate_app_icon.swift
 xcodegen generate --spec ios/project.yml --project ios
 xcodebuild build -project ios/Folqio.xcodeproj -scheme Folqio -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
 ```
@@ -58,7 +59,7 @@ Build tooling downloads pinned dependencies at development/build time, and packa
 
 ## Signing and distribution
 
-See [Store readiness and signing](docs/STORE_READINESS.md) for Google Play's API 36 target, Xcode 26+, secure upload key environment variables, AAB/IPA requirements, actual platform testing and privacy declarations. CI development APKs are debug-signed and **not** production artifacts.
+See [Store readiness and signing](docs/STORE_READINESS.md) for Google Play's API 36 target, Xcode 26+, secure upload key environment variables, AAB/IPA requirements, actual platform testing and privacy declarations. The branded iOS icon is rendered locally from vector source before XcodeGen; CI development APKs are debug-signed and **not** production artifacts.
 
 ## Project docs
 

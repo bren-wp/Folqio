@@ -9,3 +9,6 @@ local.properties
 xcuserdata/
 DerivedData/
 ios/*.xcodeproj/
+
+# Deterministic build-time asset generated from Folqio vector source
+ios/Folqio/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
