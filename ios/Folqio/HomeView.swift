@@ -315,7 +315,7 @@ struct HomeView: View {
                 onlyFavorites = true
             }
             BottomNavigationItem(title: tr("settings"), symbol: "gearshape", active: false) {
-                showPrivacy = true
+                showSettings = true
             }
         }
         .padding(.horizontal, 10)
