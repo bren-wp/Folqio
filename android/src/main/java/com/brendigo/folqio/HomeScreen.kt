@@ -165,7 +165,7 @@ internal fun FolqioHome(
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             QuickAction("Open", Icons.Default.FolderOpen, Modifier.weight(1f), onOpen)
                             QuickAction("Scan", Icons.Default.CameraAlt, Modifier.weight(1f), onCamera)
-                            QuickAction("Photo", Icons.Default.Photo, Modifier.weight(1f), onPhoto)
+                            QuickAction("Photos", Icons.Default.Photo, Modifier.weight(1f), onPhoto)
                         }
                     }
                 }

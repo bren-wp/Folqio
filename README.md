@@ -4,7 +4,7 @@
 
 Folqio is a privacy-oriented, offline-first document app with separately implemented **Android (Kotlin/Jetpack Compose)** and **iOS (Swift/SwiftUI/PDFKit)** versions. The UI uses Folqio's navy, slate and mint visual language.
 
-> **Status: native development preview, v0.1.0. Not production-ready.** All examples shown in previous concept renders are targets, not proof of implemented screens or pixel-perfect parity. There are no demo PDF files or user accounts in the app.
+> **Status: native development preview, v0.1.1. Not production-ready.** All examples shown in previous concept renders are targets, not proof of implemented screens or pixel-perfect parity. There are no demo PDF files or user accounts in the app.
 
 ## Real functionality
 
@@ -18,12 +18,15 @@ Folqio is a privacy-oriented, offline-first document app with separately impleme
 | Open encrypted PDF with password | Not yet | Yes; entered locally and not persisted |
 | Page bookmarks | Yes | No |
 | PDF full-text search | No | Yes |
+| Offline OCR on one selected PDF page | Not yet | Yes, on-device Apple Vision (read/copy only) |
 | PDF annotations | No | Text notes; highlight first search result |
 | Camera scanning | System camera, single photo into PDF; manual cropping not implemented | VisionKit camera scan, multi-page, auto edge adjustment |
-| Photo-to-PDF | Yes, single image | Yes, single image |
+| Photo-to-PDF | Up to ten photos per multipage PDF | Up to ten photos per multipage PDF |
 | Merge multiple PDFs | Not yet | Yes, from local library |
 | Extract, rotate, reorder | Extract/rotate current page to **flattened** copy; no reorder | Extract, rotate, reorder in a new vector-preserving PDF |
 | Share PDF | Android Sharesheet | iOS ShareLink |
+| Save as a separate PDF file | Android system Save document picker | iOS system ShareLink / Save to Files |
+| Restore last read page | Yes | Yes |
 | Internet/account needed for PDF operations | No | No |
 
 ### Important limitations
@@ -31,7 +34,7 @@ Folqio is a privacy-oriented, offline-first document app with separately impleme
 - Android's current PDF engine is read-only. Its export operations create **rasterized** page copies; they do not preserve searchable text, forms or native annotations. Do not use those operations as secure redaction.
 - Android camera capture does not yet replicate the reference scanner's edge correction, multi-page capture and filters.
 - iOS PDF page operations retain PDF content rather than rendering to a bitmap, but complex PDF fidelity and forms require a broader compatibility test suite.
-- No OCR, encryption vault, text reflow, direct editing of original PDF text, creating password-protected PDFs, verified redaction, undo/redo editor, or signing workflow has been shipped yet.
+- No Android OCR, document-wide OCR indexing, encryption vault, text reflow, direct editing of original PDF text, creating password-protected PDFs, verified redaction, undo/redo editor, or signing workflow has been shipped yet.
 - Full 1:1 visual matching to prior image renders requires real-device screenshots and audited interaction states. Current screens follow the same brand rather than claiming pixel-level equivalence.
 
 ## Development
