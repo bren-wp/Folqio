@@ -48,7 +48,12 @@ else:
             issues.append("Apple file timestamp API reason missing")
     except (OSError, ValueError, KeyError, TypeError) as exc:
         issues.append(f"Invalid Apple privacy manifest: {exc}")
-if "MARKETING_VERSION: \"0.1.8\"" not in project or 'versionName = "0.1.8"' not in gradle:
+android_name = re.search(r'versionName\s*=\s*"([^"]+)"', gradle)
+ios_name = re.search(r'MARKETING_VERSION:\s*"([^"]+)"', project)
+android_code = re.search(r'versionCode\s*=\s*(\d+)', gradle)
+ios_code = re.search(r'CURRENT_PROJECT_VERSION:\s*"(\d+)"', project)
+if (not android_name or not ios_name or android_name.group(1) != ios_name.group(1)
+        or not android_code or not ios_code or android_code.group(1) != ios_code.group(1)):
     issues.append("Platform versions are inconsistent")
 if issues:
     print("\n".join("AUDIT FAILED: " + issue for issue in issues), file=sys.stderr)
