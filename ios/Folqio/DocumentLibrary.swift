@@ -12,11 +12,13 @@ struct DocumentItem: Codable, Identifiable, Hashable {
 enum DocumentError: LocalizedError {
     case notPDF
     case inaccessible
+    case tooLarge
 
     var errorDescription: String? {
         switch self {
         case .notPDF: return "The selected file is not a readable PDF."
         case .inaccessible: return "The document is unavailable."
+        case .tooLarge: return "Choose a PDF smaller than 150 MB."
         }
     }
 }
@@ -51,6 +53,11 @@ final class DocumentLibrary: ObservableObject {
         let granted = input.startAccessingSecurityScopedResource()
         defer { if granted { input.stopAccessingSecurityScopedResource() } }
 
+        // Reject excessive input before PDFKit parses or copies it.
+        let attributes = try FileManager.default.attributesOfItem(atPath: input.path)
+        guard (attributes[.size] as? NSNumber)?.int64Value ?? 0 <= 150 * 1024 * 1024 else {
+            throw DocumentError.tooLarge
+        }
         guard FileManager.default.isReadableFile(atPath: input.path),
               PDFDocument(url: input) != nil
         else { throw DocumentError.notPDF }
@@ -60,10 +67,15 @@ final class DocumentLibrary: ObservableObject {
         let relativePath = id.uuidString + ".pdf"
         let destination = rootURL.appendingPathComponent(relativePath, isDirectory: false)
         try FileManager.default.copyItem(at: input, to: destination)
-        try? FileManager.default.setAttributes(
-            [.protectionKey: FileProtectionType.complete],
-            ofItemAtPath: destination.path
-        )
+        do {
+            try FileManager.default.setAttributes(
+                [.protectionKey: FileProtectionType.complete],
+                ofItemAtPath: destination.path
+            )
+        } catch {
+            try? FileManager.default.removeItem(at: destination)
+            throw DocumentError.inaccessible
+        }
         let item = DocumentItem(id: id, filename: filename, relativePath: relativePath,
                                 isFavorite: false, lastReadPage: 0)
         documents.insert(item, at: 0)

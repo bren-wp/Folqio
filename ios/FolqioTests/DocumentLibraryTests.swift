@@ -22,6 +22,24 @@ final class DocumentLibraryTests: XCTestCase {
         XCTAssertFalse(library.renameLabel(unknown, requestedName: "../invalid"))
     }
 
+    func testRejectsOversizedDocumentBeforeParsing() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let input = root.appendingPathComponent("oversized.pdf")
+        try Data("%PDF-1.7".utf8).write(to: input)
+        let handle = try FileHandle(forWritingTo: input)
+        try handle.truncate(atOffset: 151 * 1024 * 1024)
+        try handle.close()
+        let library = DocumentLibrary(rootURL: root.appendingPathComponent("app"))
+        XCTAssertThrowsError(try library.importPDF(from: input)) { error in
+            guard case DocumentError.tooLarge = error else {
+                return XCTFail("Expected size rejection before PDFKit parsing")
+            }
+        }
+        XCTAssertTrue(library.documents.isEmpty)
+    }
+
     func testNewLibraryIsEmpty() {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
