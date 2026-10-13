@@ -23,7 +23,7 @@
 8. Accessibility audit, very large/encrypted PDF handling, performance profiling and crashes.
 9. Device-farm smoke tests, signed distribution, App Store and Google Play approvals.
 
-## v0.1.3 hardening work
+## v0.1.3–0.1.4 hardening work
 
 - Upgrade Android target/compile to API 36 and build tooling to AGP 8.13.2 / Gradle 8.13.
 - Edge-to-edge system bars and safe drawing insets in reader; handle incoming PDFs on activity reuse.
@@ -31,7 +31,7 @@
 - Keep locally generated documents in the library beyond the external-shortcut limit.
 - Explicit removal confirmation; delete only app-generated PDFs inside a validated sandbox path.
 - Shared serialization for recent-document metadata; remove unused imports and unused helper overloads.
-- Add Google Play signing inputs and native CI lint/AAB checks, plus Apple privacy manifest and deterministic 1024px icon generation.
+- Add Google Play signing inputs and native CI lint/AAB checks, plus Apple privacy manifest and deterministic 1024px icon generation.\n- Publish unsigned AAB next to debug APK only with explicit unsigned/development labeling; never present as production-signed.
 
 **Open release blockers:** physical-device QA, full screenshot parity, production icon sets, actual signed Play AAB and signed iOS archive, App Store listing assets, privacy disclosures, accessibility audit and advanced PDF editor parity.
 

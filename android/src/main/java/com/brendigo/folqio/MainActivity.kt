@@ -273,6 +273,23 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, o
             }
         }
     }
+    var confirmRemove by remember(file.uri) { mutableStateOf(false) }
+    if (confirmRemove) {
+        AlertDialog(
+            onDismissRequest = { confirmRemove = false },
+            title = { Text("Remove document?") },
+            text = { Text("A PDF created by Folqio will be deleted. Imported source files remain untouched.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmRemove = false
+                    onRemove()
+                }) { Text("Remove") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmRemove = false }) { Text("Cancel") }
+            }
+        )
+    }
     var exporting by remember(file.uri) { mutableStateOf(false) }
     var exportError by remember(file.uri) { mutableStateOf<String?>(null) }
 
@@ -357,7 +374,7 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, o
                 error != null -> Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                     Text(error!!, color = White)
                     Spacer(Modifier.height(15.dp))
-                    OutlinedButton(onClick = onRemove) { Text("Remove from Folqio") }
+                    OutlinedButton(onClick = { confirmRemove = true }) { Text("Remove from Folqio") }
                 }
                 image == null -> CircularProgressIndicator(color = Mint)
                 else -> Image(
