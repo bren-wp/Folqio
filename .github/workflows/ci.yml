@@ -133,3 +133,10 @@ jobs:
             -quiet
       - name: Execute Folqio iOS unit tests on a simulator
         run: bash scripts/run-ios-tests.sh
+      - name: Upload failed iOS XCTest diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: folqio-ios-xctest-failure
+          path: ${{ runner.temp }}/FolqioTests.xcresult
+          if-no-files-found: warn
