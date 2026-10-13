@@ -33,15 +33,14 @@ Folqio puts your documents first. Its dark midnight-navy interface, carefully ba
 | **🔎 Find what matters** | Search selectable PDF text and recognize scanned text on iOS with on-device OCR. |
 | **↗️ Share on your terms** | Export or share a document only when you choose to do so. |
 
-## Designed to feel at home
+## See Folqio in action
 
 <div align="center">
-  <img src="branding/folqio-symbol.svg" alt="Authentic Folqio vector brand mark, used for the app identity" width="90" />
-  <p><strong>Midnight navy · Slate · Mint</strong></p>
-  <p>Quiet surfaces, confident typography, comfortable controls, and a PDF page that stays the focus.</p>
+  <img src="docs/media/android-home.png" alt="Real screenshot of the Folqio home screen running on an Android emulator" width="290" />
+  <p><sub>Actual Android app, captured on an emulator. No fabricated documents or simulated UI.</sub></p>
 </div>
 
-The artwork above is the actual Folqio brand source. We only add device screenshots captured from the running app—not simulated or fictional product screens.
+**Midnight navy · Slate · Mint.** Quiet surfaces, clear typography, comfortable controls, and a PDF page that stays the focus.
 
 ## Privacy is part of the experience
 
