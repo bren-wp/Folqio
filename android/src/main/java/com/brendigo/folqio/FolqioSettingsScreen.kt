@@ -13,14 +13,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-private val slate = Color(0xFF1A2433)
-private val mint = Color(0xFF22D3A7)
-private val pearl = Color(0xFFF7FAFC)
-private val muted = Color(0xFFA9B9C9)
 
 @Composable
 internal fun FolqioSettingsScreen(
@@ -86,12 +81,12 @@ internal fun FolqioSettingsScreen(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(15.dp)) {
-        Card(colors = CardDefaults.cardColors(containerColor = slate), shape = RoundedCornerShape(20.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = FolqioPalette.slate), shape = RoundedCornerShape(20.dp)) {
             Column(Modifier.padding(19.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
-                Text("Folqio", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = pearl)
-                Text("Your documents. Your device.", color = muted)
-                HorizontalDivider(color = muted.copy(alpha = .2f))
-                Text(tr("language"), color = pearl, style = MaterialTheme.typography.titleMedium)
+                Text("Folqio", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = FolqioPalette.pearl)
+                Text("Your documents. Your device.", color = FolqioPalette.muted)
+                HorizontalDivider(color = FolqioPalette.muted.copy(alpha = .2f))
+                Text(tr("language"), color = FolqioPalette.pearl, style = MaterialTheme.typography.titleMedium)
                 Box {
                     OutlinedButton(onClick = { languageMenu = true }, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Default.Language, null)
@@ -112,20 +107,20 @@ internal fun FolqioSettingsScreen(
                     }
                 }
                 Text("Choose the language that feels right for you.",
-                    style = MaterialTheme.typography.bodySmall, color = muted)
+                    style = MaterialTheme.typography.bodySmall, color = FolqioPalette.muted)
             }
         }
 
-        Card(colors = CardDefaults.cardColors(containerColor = slate), shape = RoundedCornerShape(20.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = FolqioPalette.slate), shape = RoundedCornerShape(20.dp)) {
             Column(Modifier.padding(19.dp)) {
-                Text("Reading & documents", color = pearl, style = MaterialTheme.typography.titleMedium,
+                Text("Reading & documents", color = FolqioPalette.pearl, style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(tr("reopen"), color = pearl, modifier = Modifier.weight(1f))
+                    Text(tr("reopen"), color = FolqioPalette.pearl, modifier = Modifier.weight(1f))
                     Switch(checked = reopenLastPage, onCheckedChange = onReopenChange)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(tr("confirm"), color = pearl, modifier = Modifier.weight(1f))
+                    Text(tr("confirm"), color = FolqioPalette.pearl, modifier = Modifier.weight(1f))
                     Switch(checked = confirmRemoval, onCheckedChange = onConfirmChange)
                 }
                 Button(onClick = {
@@ -139,12 +134,12 @@ internal fun FolqioSettingsScreen(
             }
         }
 
-        Card(colors = CardDefaults.cardColors(containerColor = slate), shape = RoundedCornerShape(20.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = FolqioPalette.slate), shape = RoundedCornerShape(20.dp)) {
             Column(Modifier.padding(19.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text("Privacy & information", color = pearl,
+                Text("Privacy & information", color = FolqioPalette.pearl,
                     style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text("Documents stay under your control. No Folqio account or advertising.",
-                    color = muted)
+                    color = FolqioPalette.muted)
                 OutlinedButton(onClick = { legalPage = "privacy" }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.PrivacyTip, null)
                     Spacer(Modifier.width(10.dp))
@@ -155,9 +150,9 @@ internal fun FolqioSettingsScreen(
                     Spacer(Modifier.width(10.dp))
                     Text(tr("terms"))
                 }
-                HorizontalDivider(color = muted.copy(alpha = .2f))
-                Text("${tr("author")} Brendigo", color = pearl)
-                Text("Folqio · © 2026 Brendigo", color = muted,
+                HorizontalDivider(color = FolqioPalette.muted.copy(alpha = .2f))
+                Text("${tr("author")} Brendigo", color = FolqioPalette.pearl)
+                Text("Folqio · © 2026 Brendigo", color = FolqioPalette.muted,
                     style = MaterialTheme.typography.bodySmall)
             }
         }

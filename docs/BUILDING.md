@@ -29,3 +29,7 @@ The icon is generated locally from Folqio's vector identity; no runtime image re
 ## Quality checks
 
 GitHub Actions run Android unit tests and lint, build debug APK and unsigned release AAB, and compile the iOS app and test bundle. Compilation alone is not a substitute for device integration tests, permission tests, store certification or pixel-level UI comparisons. See [tests](TESTING.md) and [source audit](CODE_AUDIT.md).
+
+## Run the real iOS tests
+
+Folqio CI runs `bash scripts/run-ios-tests.sh` against an available iPhone simulator. The test suite must **execute and pass**, not merely compile. This is separate from Apple Distribution signing and real-device acceptance testing.

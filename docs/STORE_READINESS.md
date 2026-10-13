@@ -46,3 +46,7 @@ The declarations follow Apple's approved-reason descriptions:
 https://developer.apple.com/documentation/bundleresources/app-privacy-configuration/nsprivacyaccessedapitypes/nsprivacyaccessedapitype
 
 The archive and complete privacy report must still be reviewed at actual App Store submission time.
+
+### v0.1.8 execution gate
+
+Native CI and release builds now require a bootable iPhone simulator and an executed XCTest suite rather than merely compiling test targets. The Android app builds with the existing API 36 target. Apple Xcode 26+ and SDK 26 requirements are checked in both workflows. This does not substitute for physical-device signoff or actual upload/provisioning.

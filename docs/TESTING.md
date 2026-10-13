@@ -32,3 +32,7 @@ Use personal test documents with no real sensitive information. Test on physical
 ## Known gaps
 
 Android currently has no text-level PDF editing or OCR, and its capture is single photo without auto-edge correction. iOS device/simulator screenshots are not yet compared pixel-by-pixel to the reference art. Production security and App Store/Play Store acceptance are not tested.
+
+## Release CI test gate (v0.1.7)
+
+Both GitHub CI and release workflows select an available iPhone simulator, boot it, and execute XCTest. A missing simulator causes a visible failure rather than an implicit skip. Unit test execution does not replace physical-device scanner and sharing tests.

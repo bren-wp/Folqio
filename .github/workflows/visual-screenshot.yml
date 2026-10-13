@@ -1,28 +1,17 @@
-name: Capture Real Android Screenshot
+name: Capture Real Folqio Android Screens
 
 on:
-  push:
-    branches:
-      - feat/v0.1.4-release-polish-readme
-    paths-ignore:
-      - docs/media/android-home.png
+  workflow_dispatch:
 
 permissions:
-  contents: write
-
-concurrency:
-  group: folqio-visual-snapshot
-  cancel-in-progress: true
+  contents: read
 
 jobs:
-  screenshot:
-    name: Capture running Android home
+  screenshots:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: feat/v0.1.4-release-polish-readme
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -30,9 +19,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-      - name: Build Android debug APK
+      - name: Build Android app
         run: gradle :android:assembleDebug
-      - name: Screenshot of actual app running in emulator
+      - name: Capture authentic Android app navigation
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -43,20 +32,10 @@ jobs:
           script: |
             adb install -r android/build/outputs/apk/debug/android-debug.apk
             adb shell am start -n com.brendigo.folqio/.MainActivity
-            sleep 7
-            mkdir -p docs/media
-            adb exec-out screencap -p > docs/media/android-home.png
-            test -s docs/media/android-home.png
-            file docs/media/android-home.png
-      - name: Save authentic screenshot to this feature branch
-        run: |
-          test -s docs/media/android-home.png
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/media/android-home.png
-          if git diff --cached --quiet; then
-            echo "Screenshot unchanged"
-          else
-            git commit -m "docs: capture actual Android home screen in emulator"
-            git push origin HEAD:refs/heads/feat/v0.1.4-release-polish-readme
-          fi
+            python3 scripts/capture_android_ui.py
+      - name: Archive only real captured screens
+        uses: actions/upload-artifact@v4
+        with:
+          name: folqio-authentic-android-screens
+          path: docs/media/android-*.png
+          if-no-files-found: error
