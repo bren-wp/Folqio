@@ -28,6 +28,41 @@ final class DocumentLibraryTests: XCTestCase {
         let library = DocumentLibrary(rootURL: root)
         XCTAssertTrue(library.documents.isEmpty)
     }
+
+    func testRemovalPersistsAndDeletesOnlyOwnedFile() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = DocumentLibrary(rootURL: root)
+        let picture = UIGraphicsImageRenderer(size: CGSize(width: 80, height: 120))
+            .image { context in UIColor.white.setFill(); context.fill(CGRect(x: 0, y: 0, width: 80, height: 120)) }
+        let pdf = PDFDocument()
+        let page = try XCTUnwrap(PDFPage(image: picture))
+        pdf.insert(page, at: 0)
+        let document = try library.createPDF(pdf, named: "Archive.pdf")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: library.localURL(for: document).path))
+        XCTAssertTrue(library.remove(document))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: library.localURL(for: document).path))
+        XCTAssertTrue(DocumentLibrary(rootURL: root).documents.isEmpty)
+    }
+
+    func testInterruptedRemovalRecoversDocumentOnNextLaunch() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = DocumentLibrary(rootURL: root)
+        let picture = UIGraphicsImageRenderer(size: CGSize(width: 80, height: 120))
+            .image { context in UIColor.white.setFill(); context.fill(CGRect(x: 0, y: 0, width: 80, height: 120)) }
+        let pdf = PDFDocument()
+        pdf.insert(try XCTUnwrap(PDFPage(image: picture)), at: 0)
+        let item = try library.createPDF(pdf, named: "Recovery.pdf")
+        let pending = root.appendingPathComponent(item.id.uuidString + ".pending-delete")
+        try FileManager.default.moveItem(at: library.localURL(for: item), to: pending)
+        let restored = DocumentLibrary(rootURL: root)
+        XCTAssertEqual(restored.documents.count, 1)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: restored.localURL(for: item).path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: pending.path))
+    }
+
+
 }
 
 @MainActor
