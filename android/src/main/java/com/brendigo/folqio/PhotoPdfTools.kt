@@ -26,6 +26,14 @@ object PhotoPdfTools {
         return FileProvider.getUriForFile(context, context.packageName + authoritySuffix, image)
     }
 
+    private fun removeOwnedCapture(context: Context, uri: Uri) {
+        if (uri.authority != context.packageName + authoritySuffix) return
+        if (uri.pathSegments.size != 2 || uri.pathSegments[0] != "camera_captures") return
+        val filename = uri.pathSegments[1]
+        if (!Regex("[a-fA-F0-9-]{36}[.]jpg").matches(filename)) return
+        File(File(context.filesDir, "captures"), filename).delete()
+    }
+
     fun createPdf(context: Context, imageUri: Uri): LocalPdf {
         val resolver = context.contentResolver
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -66,6 +74,7 @@ object PhotoPdfTools {
         } finally {
             bitmap.recycle()
             document.close()
+            removeOwnedCapture(context, imageUri)
         }
         val uri = FileProvider.getUriForFile(context, context.packageName + authoritySuffix, output)
         return LocalPdf(uri.toString(), "Photo document.pdf")
