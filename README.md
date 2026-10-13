@@ -29,7 +29,7 @@ Folqio puts your documents first. Its dark midnight-navy interface, carefully ba
 | **📖 Read with ease** | Open PDFs with confidence, zoom comfortably, and pick up exactly where you left off. |
 | **📷 Capture documents** | Turn photos into PDFs. The iOS document camera supports multi-page scanning with automatic page detection. |
 | **📁 Stay organized** | Find documents by name, rename library labels, save favorites, and keep recent files close. |
-| **🧩 Work with pages** | Create multi-page PDFs, extract or rotate pages, and combine documents. Available page tools vary by platform. |
+| **🧩 Work with pages** | Create multi-page PDFs, extract or rotate pages, and combine documents. Available page tools vary by platform. |\n| **✍️ Annotate with confidence** | On iOS, add text overlays, notes, and highlights as separate PDF copies while keeping your original intact. |
 | **🔎 Find what matters** | Search selectable PDF text and recognize scanned text on iOS with on-device OCR. |
 | **↗️ Share on your terms** | Export selected PDFs to a ZIP archive or share a document whenever you choose. |
 | **🌍 Choose your language** | 25 choices for navigation and settings, including Croatian. |
@@ -53,9 +53,9 @@ Both editions share Folqio's visual identity but use the strengths of their resp
 
 **Android** brings a focused PDF reader, bookmarks, document library, photo-to-PDF creation, save/share, and page extraction, rotation, and merging as flattened copies.
 
-**iPhone and iPad** add PDFKit text search, note and highlight annotations, multi-page document-camera scanning, on-device OCR, and page operations that retain PDF content.
+**iPhone and iPad** add PDFKit text search, free-text overlays, notes, and highlights saved to independent copies, multi-page document-camera scanning, on-device OCR, and page operations that retain PDF content.
 
-**Please note:** Android's extracted, rotated, and merged PDF copies are rasterized. Those operations do not preserve searchable text, forms, or signatures and must not be treated as secure redaction. Some advanced PDF editing features remain on the roadmap.
+**Please note:** Android's extracted, rotated, and merged PDF copies are rasterized. Those operations do not preserve searchable text, forms, or signatures and must not be treated as secure redaction. Text overlays are PDF annotations, not replacement of pre-existing PDF text; editing a signed PDF may invalidate signatures on the resulting copy. Some advanced PDF editing features remain on the roadmap.
 
 ## Discover Folqio
 
