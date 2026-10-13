@@ -34,12 +34,10 @@ struct ReaderView: View {
                     }
                     .padding(.leading, 10)
                     Spacer()
-                    if let url = Optional(library.localURL(for: item)) {
-                        ShareLink(item: url) {
-                            Image(systemName: "square.and.arrow.up")
-                        }
-                        .accessibilityLabel("Share PDF")
+                    ShareLink(item: library.localURL(for: item)) {
+                        Image(systemName: "square.and.arrow.up")
                     }
+                    .accessibilityLabel("Share PDF")
                 }
                 .padding(17)
 
@@ -77,7 +75,7 @@ struct ReaderView: View {
                     Button {
                         if currentPageIndex > 0 {
                             currentPageIndex -= 1
-                            selectedSearchResult = document?.page(at: currentPageIndex)?.selectionForEntirePage()
+                            selectedSearchResult = nil
                         }
                     } label: {
                         Image(systemName: "chevron.left")
@@ -185,8 +183,7 @@ private struct PDFViewer: UIViewRepresentable {
             view.go(to: selection)
         }
         if let current = view.currentPage,
-           let index = document.index(for: current),
-           index != currentPageIndex,
+           document.index(for: current) != currentPageIndex,
            let target = document.page(at: currentPageIndex),
            selection == nil {
             view.go(to: target)
@@ -204,7 +201,7 @@ private struct PDFViewer: UIViewRepresentable {
                 forName: .PDFViewPageChanged, object: view, queue: .main
             ) { [weak self, weak view] _ in
                 guard let view, let page = view.currentPage,
-                      let index = view.document?.index(for: page) else { return }
+                      let index = view.document?.index(for: page), index != NSNotFound else { return }
                 self?.parent.currentPageIndex = index
             }
         }
