@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: native-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   android:
     name: Android compile and unit tests
@@ -49,11 +53,19 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             -quiet
-      - name: Run unit tests when a simulator is installed
+      - name: Compile iOS unit tests
         run: |
-          SIMULATOR_ID="$(python3 -c 'import json,subprocess; p=subprocess.run(["xcrun","simctl","list","devices","available","-j"],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,timeout=20,check=False); d=json.loads(p.stdout) if p.returncode == 0 else {"devices":{}}; print(next((x["udid"] for group in d.get("devices",{}).values() for x in group if "iPhone" in x.get("name","")), ""))' || true)"
+          xcodebuild build-for-testing \
+            -project ios/Folqio.xcodeproj \
+            -scheme Folqio \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet
+      - name: Run unit tests only on an already booted iPhone simulator
+        run: |
+          SIMULATOR_ID="$(python3 -c 'import json,subprocess; p=subprocess.run(["xcrun","simctl","list","devices","booted","-j"],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,timeout=15,check=False); d=json.loads(p.stdout) if p.returncode == 0 else {"devices":{}}; print(next((x["udid"] for group in d.get("devices",{}).values() for x in group if "iPhone" in x.get("name","")), ""))' || true)"
           if [ -z "$SIMULATOR_ID" ]; then
-            echo "::notice::No iPhone Simulator runtime on hosted runner. App compile verified; test execution skipped."
+            echo "::notice::No prebooted iPhone simulator is available. Unit-test compilation verified; execution must be run on a configured simulator or device."
           else
             xcodebuild test \
               -project ios/Folqio.xcodeproj \

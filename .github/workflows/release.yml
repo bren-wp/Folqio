@@ -1,14 +1,19 @@
-name: Android release candidate
+name: Folqio Development Release
 
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: folqio-release
+  cancel-in-progress: false
+
 jobs:
-  publish-android:
+  android:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -20,13 +25,61 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-      - name: Test and package
+      - name: Run Android unit tests and package
         run: gradle :android:testDebugUnitTest :android:assembleDebug
-      - name: Create GitHub pre-release after tests pass
+      - name: Verify APK artifact exists
+        run: |
+          test -s android/build/outputs/apk/debug/android-debug.apk
+          unzip -t android/build/outputs/apk/debug/android-debug.apk >/dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: folqio-development-apk
+          path: android/build/outputs/apk/debug/android-debug.apk
+          if-no-files-found: error
+
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate --spec ios/project.yml --project ios
+      - name: Compile app and unit tests for iOS simulator
+        run: |
+          xcodebuild build-for-testing \
+            -project ios/Folqio.xcodeproj \
+            -scheme Folqio \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet
+
+  publish:
+    name: Publish debug-only prerelease
+    needs: [android, ios]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: folqio-development-apk
+          path: dist
+      - name: Publish versioned development build
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" android/build/outputs/apk/debug/*.apk \
-            --title "Folqio ${GITHUB_REF_NAME} (development build)" \
+          set -euo pipefail
+          VERSION="$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/build.gradle.kts | head -n 1)"
+          test -n "$VERSION"
+          TAG="v$VERSION"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::notice::Release $TAG already exists; not overwriting."
+            exit 0
+          fi
+          cp dist/android-debug.apk "dist/Folqio-$TAG-Android-debug.apk"
+          gh release create "$TAG" "dist/Folqio-$TAG-Android-debug.apk" \
+            --target "$GITHUB_SHA" \
+            --title "Folqio $TAG — development preview" \
             --prerelease \
-            --notes "Android debug-signed development build. Not production signed. iOS source is included in the repository; iOS distribution requires Apple signing."
+            --notes "Development preview only. Android APK is debug-signed, not Play Store-ready. iOS source is in this repository but cannot be distributed without Apple signing. See README and docs/ROADMAP.md for unimplemented features and 1:1 UI QA limitations."

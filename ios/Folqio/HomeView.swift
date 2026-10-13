@@ -1,5 +1,10 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import PhotosUI
+import VisionKit
+import PDFKit
+
+private enum MainSection { case home, files, favorites }
 
 struct HomeView: View {
     @EnvironmentObject private var library: DocumentLibrary
@@ -8,9 +13,18 @@ struct HomeView: View {
     @State private var query = ""
     @State private var importError: String?
     @State private var showPrivacy = false
+    @State private var renameItem: DocumentItem?
+    @State private var showingScanner = false
+    @State private var showingMerge = false
+    @State private var onlyFavorites = false
+    @State private var section: MainSection = .home
+    @State private var selectedPhoto: PhotosPickerItem?
 
     private var filtered: [DocumentItem] {
-        library.documents.filter { query.isEmpty || $0.filename.localizedCaseInsensitiveContains(query) }
+        library.documents.filter {
+            (!(onlyFavorites || section == .favorites) || $0.isFavorite) &&
+            (query.isEmpty || $0.filename.localizedCaseInsensitiveContains(query))
+        }
     }
 
     var body: some View {
@@ -39,6 +53,7 @@ struct HomeView: View {
                         }
                         .padding(.top, 22)
 
+                        if section == .home {
                         FolqioCard {
                             VStack(alignment: .leading, spacing: 14) {
                                 Image(systemName: "folder.badge.plus")
@@ -63,8 +78,48 @@ struct HomeView: View {
                             }
                         }
 
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Quick actions")
+                                .font(.title3.bold())
+                                .foregroundStyle(FolqioColors.pearl)
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 10) {
+                                Button { isImporterPresented = true } label: {
+                                    QuickAction(title: "Open", symbol: "folder")
+                                }
+                                Button {
+                                    if VNDocumentCameraViewController.isSupported {
+                                        showingScanner = true
+                                    } else {
+                                        importError = "Document scanning requires a camera-enabled iPhone or iPad."
+                                    }
+                                } label: {
+                                    QuickAction(title: "Scan", symbol: "camera.viewfinder")
+                                }
+                                PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                                    QuickAction(title: "Photo", symbol: "photo")
+                                }
+                                Button { showingMerge = true } label: {
+                                    QuickAction(title: "Merge", symbol: "square.on.square")
+                                }
+                                .disabled(library.documents.count < 2)
+                            }
+                            Text("All document processing stays on your device.")
+                                .font(.caption)
+                                .foregroundStyle(FolqioColors.muted)
+                        }
+
+                        }
+
+                        HStack(spacing: 12) {
+                            Button("All files") { onlyFavorites = false }
+                                .foregroundStyle(onlyFavorites ? FolqioColors.muted : FolqioColors.mint)
+                            Button("Favorites") { onlyFavorites = true }
+                                .foregroundStyle(onlyFavorites ? FolqioColors.mint : FolqioColors.muted)
+                        }
+                        .font(.subheadline.weight(.medium))
+
                         HStack {
-                            Text("Recent files")
+                            Text(section == .favorites ? "Favorites" : section == .files ? "Documents" : "Recent files")
                                 .font(.title2.bold())
                                 .foregroundStyle(FolqioColors.pearl)
                             Spacer()
@@ -92,9 +147,7 @@ struct HomeView: View {
                                 selectedDocument = document
                             } label: {
                                 HStack(spacing: 15) {
-                                    Image(systemName: "doc.text")
-                                        .font(.title2)
-                                        .foregroundStyle(FolqioColors.mint)
+                                    DocumentThumbnail(url: library.localURL(for: document))
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(document.filename)
                                             .fontWeight(.semibold)
@@ -116,6 +169,7 @@ struct HomeView: View {
                                 .background(FolqioColors.slate, in: RoundedRectangle(cornerRadius: 15))
                             }
                             .contextMenu {
+                                Button("Rename label", systemImage: "pencil") { renameItem = document }
                                 Button(document.isFavorite ? "Remove favorite" : "Add favorite",
                                        systemImage: document.isFavorite ? "star.slash" : "star") {
                                     library.toggleFavorite(document)
@@ -137,6 +191,9 @@ struct HomeView: View {
                     .padding(.horizontal, 22)
                     .padding(.bottom, 30)
                 }
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                bottomNavigation
             }
             .toolbar(.hidden, for: .navigationBar)
             .fileImporter(isPresented: $isImporterPresented, allowedContentTypes: [.pdf]) { result in
@@ -160,12 +217,79 @@ struct HomeView: View {
                 ReaderView(item: item)
                     .environmentObject(library)
             }
+            .fullScreenCover(isPresented: $showingScanner) {
+                DocumentScannerView(onScan: { pdf in
+                    showingScanner = false
+                    do { _ = try library.createPDF(pdf, named: "Scanned document.pdf") }
+                    catch { importError = error.localizedDescription }
+                }, onCancel: {
+                    showingScanner = false
+                }, onError: { error in
+                    showingScanner = false
+                    importError = error.localizedDescription
+                })
+            }
+            .sheet(isPresented: $showingMerge) {
+                MergeDocumentsView(onCreated: { _ in })
+                    .environmentObject(library)
+            }
+            .onChange(of: selectedPhoto) { photo in
+                guard let photo else { return }
+                Task {
+                    do {
+                        guard let data = try await photo.loadTransferable(type: Data.self),
+                              data.count <= 40_000_000,
+                              let picture = UIImage(data: data),
+                              let page = PDFPage(image: picture)
+                        else { throw DocumentError.inaccessible }
+                        let pdf = PDFDocument()
+                        pdf.insert(page, at: 0)
+                        _ = try library.createPDF(pdf, named: "Photo document.pdf")
+                    } catch {
+                        importError = error.localizedDescription
+                    }
+                    selectedPhoto = nil
+                }
+            }
+            .sheet(item: $renameItem) { item in
+                RenameDocumentSheet(item: item).environmentObject(library)
+            }
             .sheet(isPresented: $showPrivacy) {
                 PrivacyView()
                     .presentationDetents([.medium])
             }
         }
         .tint(FolqioColors.mint)
+    }
+
+    private var bottomNavigation: some View {
+        HStack(spacing: 2) {
+            BottomNavigationItem(title: "Home", symbol: "house.fill", active: section == .home) {
+                section = .home
+                onlyFavorites = false
+            }
+            BottomNavigationItem(title: "Files", symbol: "folder", active: section == .files) {
+                section = .files
+                onlyFavorites = false
+            }
+            BottomNavigationItem(title: "Scan", symbol: "camera", active: false) {
+                if VNDocumentCameraViewController.isSupported {
+                    showingScanner = true
+                } else {
+                    importError = "Document scanning requires a camera-enabled iPhone or iPad."
+                }
+            }
+            BottomNavigationItem(title: "Favorites", symbol: "star", active: section == .favorites) {
+                section = .favorites
+                onlyFavorites = true
+            }
+            BottomNavigationItem(title: "Settings", symbol: "gearshape", active: false) {
+                showPrivacy = true
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(FolqioColors.slate)
     }
 }
 
@@ -185,5 +309,48 @@ private struct PrivacyView: View {
             .foregroundStyle(FolqioColors.pearl)
             .padding(28)
         }
+    }
+}
+
+private struct QuickAction: View {
+    let title: String
+    let symbol: String
+
+    var body: some View {
+        VStack(spacing: 9) {
+            Image(systemName: symbol)
+                .font(.title2.weight(.medium))
+                .frame(height: 28)
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .foregroundStyle(FolqioColors.mint)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(FolqioColors.slate, in: RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+private struct BottomNavigationItem: View {
+    let title: String
+    let symbol: String
+    let active: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 5) {
+                Image(systemName: symbol)
+                    .font(.system(size: 19))
+                Text(title)
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .foregroundStyle(active ? FolqioColors.mint : FolqioColors.muted)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 5)
+        }
+        .buttonStyle(.plain)
     }
 }

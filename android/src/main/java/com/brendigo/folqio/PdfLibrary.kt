@@ -41,6 +41,37 @@ class PdfLibrary(context: Context) {
         preferences.edit().putString("recent", entries.toString()).apply()
     }
 
+    /**
+     * Change the library display label; an imported provider-owned source is never renamed.
+     */
+    fun renameLabel(file: LocalPdf, requested: String): Boolean {
+        val name = requested.trim().take(160)
+        if (name.isBlank() || name.any { it == '/' || it == '\\' || it == '\n' || it == '\r' }) return false
+        val normalized = if (LocalPdf.isPdfFilename(name)) name else "$name.pdf"
+        val entries = JSONArray()
+        var found = false
+        recent().forEach { item ->
+            if (item.uri == file.uri) {
+                entries.put(JSONObject().put("uri", item.uri).put("name", normalized))
+                found = true
+            } else {
+                entries.put(JSONObject().put("uri", item.uri).put("name", item.name))
+            }
+        }
+        if (found) preferences.edit().putString("recent", entries.toString()).apply()
+        return found
+    }
+
+    fun isFavorite(uri: String): Boolean =
+        preferences.getStringSet("favorites", emptySet())?.contains(uri) == true
+
+    fun toggleFavorite(uri: String): Boolean {
+        val favorites = preferences.getStringSet("favorites", emptySet()).orEmpty().toMutableSet()
+        if (!favorites.add(uri)) favorites.remove(uri)
+        preferences.edit().putStringSet("favorites", favorites).apply()
+        return uri in favorites
+    }
+
     fun isBookmarked(uri: String, page: Int): Boolean =
         preferences.getStringSet("bookmarks", emptySet())?.contains("$uri#$page") == true
 

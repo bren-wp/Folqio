@@ -11,6 +11,9 @@ struct ReaderView: View {
     @State private var currentPageIndex = 0
     @State private var query = ""
     @State private var selectedSearchResult: PDFSelection?
+    @State private var showingPages = false
+    @State private var showingPassword = false
+    @State private var unlockGeneration = 0
     @State private var showingNote = false
     @State private var noteText = ""
     @State private var message: String?
@@ -28,6 +31,27 @@ struct ReaderView: View {
                 Button("Save", action: saveNote)
             } message: {
                 Text("Adds a note annotation to the current page.")
+            }
+            .sheet(isPresented: $showingPassword) {
+                if let document {
+                    UnlockDocumentSheet(
+                        document: document,
+                        onUnlocked: {
+                            showingPassword = false
+                            unlockGeneration += 1
+                        },
+                        onCancel: {
+                            showingPassword = false
+                            dismiss()
+                        }
+                    )
+                }
+            }
+            .sheet(isPresented: $showingPages) {
+                PageToolsView(item: item) { _ in
+                    message = "Saved an edited copy to your document library."
+                }
+                .environmentObject(library)
             }
             .alert("PDF reader", isPresented: messageIsPresented) {
                 Button("OK", role: .cancel) { message = nil }
@@ -107,6 +131,7 @@ struct ReaderView: View {
                       initialPage: item.lastReadPage,
                       currentPageIndex: $currentPageIndex,
                       selection: selectedSearchResult)
+                .id(unlockGeneration)
                 .background(Color.white)
         } else {
             Spacer()
@@ -134,6 +159,18 @@ struct ReaderView: View {
             }
             .disabled(document == nil)
             Spacer()
+            Button(action: highlightSearchResult) {
+                Image(systemName: "highlighter")
+            }
+            .disabled(selectedSearchResult == nil)
+            .accessibilityLabel("Highlight found text")
+            Spacer()
+            Button(action: { showingPages = true }) {
+                Image(systemName: "square.grid.2x2")
+            }
+            .disabled(document == nil)
+            .accessibilityLabel("Manage PDF pages")
+            Spacer()
             Button(action: nextPage) {
                 Image(systemName: "chevron.right")
             }
@@ -151,6 +188,7 @@ struct ReaderView: View {
     private func loadDocument() {
         let loaded = PDFDocument(url: library.localURL(for: item))
         document = loaded
+        if loaded?.isLocked == true { showingPassword = true }
         currentPageIndex = min(item.lastReadPage, max(0, (loaded?.pageCount ?? 1) - 1))
     }
 
@@ -170,6 +208,30 @@ struct ReaderView: View {
         guard let document, !query.isEmpty else { return }
         selectedSearchResult = document.findString(query, withOptions: .caseInsensitive).first
         if selectedSearchResult == nil { message = "No matching text found." }
+    }
+
+    private func highlightSearchResult() {
+        guard let document, let selection = selectedSearchResult,
+              let selectedPage = selection.pages.first,
+              selection.pages.count == 1 else {
+            message = "Find text on one page before highlighting."
+            return
+        }
+        let bounds = selection.bounds(for: selectedPage)
+        guard !bounds.isEmpty else {
+            message = "The selected text cannot be highlighted."
+            return
+        }
+        let annotation = PDFAnnotation(bounds: bounds, forType: .highlight, withProperties: nil)
+        annotation.color = UIColor.systemYellow.withAlphaComponent(0.45)
+        selectedPage.addAnnotation(annotation)
+        if document.write(to: library.localURL(for: item)) {
+            selectedSearchResult = nil
+            message = "Highlight saved to your local document."
+        } else {
+            selectedPage.removeAnnotation(annotation)
+            message = "The highlight could not be saved."
+        }
     }
 
     private func saveNote() {
