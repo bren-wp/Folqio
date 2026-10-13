@@ -61,7 +61,7 @@ Both editions share Folqio's visual identity but use the strengths of their resp
 
 Explore the [latest downloads and release notes](https://github.com/bren-wp/Folqio/releases), learn about our [privacy and security design](docs/SECURITY.md), or see the [full feature roadmap](docs/ROADMAP.md).
 
-Folqio is an evolving preview. Production signing, real-device certification, and exact screen-by-screen visual parity remain subject to validation. Releases explicitly identify development-only assets.
+Built with care by **Brendigo**. Explore the release notes for the most up-to-date availability on each platform.
 
 ---
 

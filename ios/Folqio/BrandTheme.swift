@@ -12,19 +12,13 @@ struct FolqioMark: View {
     var size: CGFloat = 58
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: size * 0.23)
-                .fill(FolqioColors.slate)
-            Image(systemName: "doc.fill")
-                .font(.system(size: size * 0.59, weight: .medium))
-                .foregroundStyle(FolqioColors.pearl)
-            Image(systemName: "checkmark")
-                .font(.system(size: size * 0.32, weight: .heavy))
-                .foregroundStyle(FolqioColors.mint)
-                .offset(x: size * 0.10, y: size * 0.10)
-        }
-        .frame(width: size, height: size)
-        .accessibilityLabel("Folqio")
+        Image("FolqioMark")
+            .resizable()
+            .interpolation(.high)
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.23))
+            .accessibilityLabel("Folqio")
     }
 }
 

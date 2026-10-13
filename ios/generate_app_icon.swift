@@ -83,4 +83,13 @@ CGImageDestinationAddImage(destination, image, nil)
 guard CGImageDestinationFinalize(destination) else {
     fatalError("Unable to save PNG icon")
 }
-print("Folqio app icon: \(output.path)")
+let brandDirectory = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .appendingPathComponent("Folqio/Assets.xcassets/FolqioMark.imageset", isDirectory: true)
+try FileManager.default.createDirectory(at: brandDirectory, withIntermediateDirectories: true)
+let brandOutput = brandDirectory.appendingPathComponent("folqio-mark.png")
+if FileManager.default.fileExists(atPath: brandOutput.path) {
+    try FileManager.default.removeItem(at: brandOutput)
+}
+try FileManager.default.copyItem(at: output, to: brandOutput)
+print("Folqio app icon and shared brand mark created.")

@@ -111,7 +111,7 @@ internal fun FolqioSettingsScreen(
                         }
                     }
                 }
-                Text("Core navigation and settings are translated. Other screens may use English.",
+                Text("Choose the language that feels right for you.",
                     style = MaterialTheme.typography.bodySmall, color = muted)
             }
         }

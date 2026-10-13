@@ -34,7 +34,7 @@ struct FolqioSettingsView: View {
                                 .tag(FolqioLanguages.supported[index].code)
                         }
                     }
-                    Text("Main navigation and settings are translated. Other screens may use English.")
+                    Text("Make Folqio feel like yours.")
                         .font(.caption).foregroundStyle(FolqioColors.muted)
                 }
 
