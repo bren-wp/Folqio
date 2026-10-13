@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import org.json.JSONArray
 import org.json.JSONObject
+import java.security.MessageDigest
 
 data class LocalPdf(val uri: String, val name: String) {
     companion object {
@@ -60,6 +61,19 @@ class PdfLibrary(context: Context) {
         }
         if (found) preferences.edit().putString("recent", entries.toString()).apply()
         return found
+    }
+
+    private fun lastPageKey(uri: String): String {
+        val hash = MessageDigest.getInstance("SHA-256")
+            .digest(uri.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+        return "last_page_$hash"
+    }
+
+    fun lastPage(uri: String): Int = preferences.getInt(lastPageKey(uri), 0).coerceAtLeast(0)
+
+    fun recordPage(uri: String, page: Int) {
+        preferences.edit().putInt(lastPageKey(uri), page.coerceAtLeast(0)).apply()
     }
 
     fun isFavorite(uri: String): Boolean =

@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -199,10 +200,38 @@ private fun FolqioApp(initialUri: Uri?) {
 private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, onRemove: () -> Unit, onCreated: (LocalPdf) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var savingCopy by remember(file.uri) { mutableStateOf(false) }
+    var saveInfo by remember(file.uri) { mutableStateOf<String?>(null) }
+    val saveLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/pdf")
+    ) { destination ->
+        if (destination != null) {
+            scope.launch {
+                savingCopy = true
+                try {
+                    withContext(Dispatchers.IO) {
+                        val resolver = context.contentResolver
+                        val source = resolver.openInputStream(Uri.parse(file.uri))
+                            ?: error("Source PDF cannot be opened")
+                        source.use { input ->
+                            val output = resolver.openOutputStream(destination, "w")
+                                ?: error("Destination cannot be opened")
+                            output.use { input.copyTo(it) }
+                        }
+                    }
+                    saveInfo = "PDF copy saved to your selected location."
+                } catch (failure: Exception) {
+                    saveInfo = "Save failed: ${failure.localizedMessage ?: "unknown error"}"
+                } finally {
+                    savingCopy = false
+                }
+            }
+        }
+    }
     var exporting by remember(file.uri) { mutableStateOf(false) }
     var exportError by remember(file.uri) { mutableStateOf<String?>(null) }
 
-    var page by remember(file.uri) { mutableIntStateOf(0) }
+    var page by remember(file.uri) { mutableIntStateOf(library.lastPage(file.uri)) }
 
     fun exportPage(rotate: Boolean) {
         scope.launch {
@@ -227,6 +256,7 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, o
     var bookmarked by remember(file.uri, page) { mutableStateOf(library.isBookmarked(file.uri, page)) }
 
     LaunchedEffect(file.uri, page) {
+        library.recordPage(file.uri, page)
         image = null
         error = null
         zoom = 1f
@@ -250,6 +280,12 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, o
             }
             IconButton(onClick = { bookmarked = library.toggleBookmark(file.uri, page) }) {
                 Icon(if (bookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, "Bookmark page", tint = Mint)
+            }
+            IconButton(
+                onClick = { saveLauncher.launch(file.name) },
+                enabled = !savingCopy
+            ) {
+                Icon(Icons.Default.SaveAlt, "Save PDF copy", tint = Mint)
             }
             IconButton(onClick = {
                 val share = Intent(Intent.ACTION_SEND).apply {
@@ -279,7 +315,10 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, o
                 )
             }
         }
-        if (exporting) LinearProgressIndicator(Modifier.fillMaxWidth(), color = Mint)
+        if (savingCopy || exporting) LinearProgressIndicator(Modifier.fillMaxWidth(), color = Mint)
+        if (saveInfo != null) {
+            Text(saveInfo!!, color = Muted, modifier = Modifier.padding(horizontal = 14.dp))
+        }
         if (exportError != null) Text(exportError!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp))
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(9.dp)) {

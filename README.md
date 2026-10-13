@@ -25,6 +25,8 @@ Folqio is a privacy-oriented, offline-first document app with separately impleme
 | Merge multiple PDFs | Not yet | Yes, from local library |
 | Extract, rotate, reorder | Extract/rotate current page to **flattened** copy; no reorder | Extract, rotate, reorder in a new vector-preserving PDF |
 | Share PDF | Android Sharesheet | iOS ShareLink |
+| Save as a separate PDF file | Android system Save document picker | iOS system ShareLink / Save to Files |
+| Restore last read page | Yes | Yes |
 | Internet/account needed for PDF operations | No | No |
 
 ### Important limitations
