@@ -28,11 +28,12 @@ final class DocumentLibrary: ObservableObject {
 
     init(rootURL: URL? = nil) {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        self.rootURL = rootURL ?? support.appendingPathComponent("Folqio", isDirectory: true)
-        try? FileManager.default.createDirectory(at: self.rootURL, withIntermediateDirectories: true)
+        var directory = rootURL ?? support.appendingPathComponent("Folqio", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         var resourceValues = URLResourceValues()
         resourceValues.isExcludedFromBackup = true
-        try? self.rootURL.setResourceValues(resourceValues)
+        try? directory.setResourceValues(resourceValues)
+        self.rootURL = directory
         load()
     }
 
