@@ -21,7 +21,7 @@ enum OfflineOCR {
     static let maximumDocumentPages = 25
 
     static func canScanWholeDocument(_ pageCount: Int) -> Bool {
-        pageCount in 1...maximumDocumentPages
+        (1...maximumDocumentPages).contains(pageCount)
     }
 
     static func recognize(_ page: PDFPage) async throws -> String {
