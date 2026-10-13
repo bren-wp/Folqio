@@ -7,6 +7,7 @@ struct ReaderView: View {
 
     let item: DocumentItem
 
+    @AppStorage("folqio_reopen_last_page") private var reopenLastPage = true
     @State private var document: PDFDocument?
     @State private var currentPageIndex = 0
     @State private var query = ""
@@ -164,7 +165,7 @@ struct ReaderView: View {
     private var documentArea: some View {
         if let document {
             PDFViewer(document: document,
-                      initialPage: item.lastReadPage,
+                      initialPage: reopenLastPage ? item.lastReadPage : 0,
                       currentPageIndex: $currentPageIndex,
                       selection: selectedSearchResult)
                 .id(unlockGeneration)
