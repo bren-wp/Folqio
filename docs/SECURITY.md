@@ -28,3 +28,11 @@
 ## Release gate
 
 Do not mark pixel-perfect parity, encrypted storage guarantees, or safe permanent redaction as complete without real device/security testing and evidence. Android debug signing is for development and is not production signing.
+
+## v0.1.3 storage and distribution safeguards
+
+- Deletion never follows an arbitrary persisted URI path: it only targets UUID-named PDFs under the app-owned `created/` directory after comparing the URI authority and FileProvider alias.
+- Android never silently evicts created documents when the external recent-shortcut cap is reached.
+- Android URI/filename metadata and reading positions remain in private app preferences; `allowBackup=false` is set.
+- Apple privacy manifest is supplied as a starting declaration. The final approved-reason API and App Store privacy questionnaire must still be audited against the production binary.
+- Debug APK/AAB from CI must **not** be used as a production signed Play upload. No private upload key is stored in Git.

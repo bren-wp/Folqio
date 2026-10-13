@@ -31,6 +31,8 @@ jobs:
         run: |
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platforms;android-36"
+      - name: Verify source and store readiness basics
+        run: python3 scripts/audit_source.py
       - name: Verify native Android app
         run: gradle :android:testDebugUnitTest :android:assembleDebug :android:lintDebug :android:bundleRelease --stacktrace
       - uses: actions/upload-artifact@v4

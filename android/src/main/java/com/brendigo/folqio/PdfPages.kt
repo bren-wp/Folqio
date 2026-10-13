@@ -21,8 +21,8 @@ object PdfPages {
                     val index = requestedPage.coerceIn(0, renderer.pageCount - 1)
                     renderer.openPage(index).use { page ->
                         val ratio = page.width.toFloat() / page.height.coerceAtLeast(1)
-                        val width = 1200
-                        val height = (width / ratio).toInt().coerceIn(1, 3000)
+                        val width = context.resources.displayMetrics.widthPixels.coerceIn(640, 1400)
+                        val height = (width / ratio).toInt().coerceIn(1, 2400)
                         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                         try {
                             bitmap.eraseColor(Color.WHITE)

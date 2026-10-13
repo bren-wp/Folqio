@@ -27,8 +27,17 @@ jobs:
           gradle-version: '8.13'
       - name: Install Android 16 SDK
         run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-36"
+          if [ -d "${ANDROID_HOME}/platforms/android-36" ]; then
+            echo "Android API 36 already installed"
+          else
+            SDKMANAGER="$(find "${ANDROID_HOME}" -type f -name sdkmanager -print -quit)"
+            if [ -z "$SDKMANAGER" ]; then
+              echo "::error::Android SDK command-line tools missing on runner"
+              exit 1
+            fi
+            yes | "$SDKMANAGER" --licenses >/dev/null || true
+            "$SDKMANAGER" "platforms;android-36"
+          fi
       - name: Run Android unit tests and package
         run: gradle :android:testDebugUnitTest :android:lintDebug :android:assembleDebug :android:bundleRelease
       - name: Verify APK artifact exists
@@ -42,7 +51,7 @@ jobs:
           if-no-files-found: error
 
   ios:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4

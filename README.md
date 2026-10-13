@@ -2,9 +2,9 @@
 
 **Your documents. Your device.**
 
-Folqio is a privacy-oriented, offline-first document app with separately implemented **Android (Kotlin/Jetpack Compose)** and **iOS (Swift/SwiftUI/PDFKit)** versions. The UI uses Folqio's navy, slate and mint visual language.
+Folqio is a privacy-oriented, offline-first document app with separately implemented **Android (Kotlin/Jetpack Compose)** and **iOS (Swift/SwiftUI/PDFKit)** versions. The UI uses Folqio's navy, slate and mint visual language. The 1:1 design parity requirement has **not** yet passed screenshot overlay QA.
 
-> **Status: native development preview, v0.1.2. Not production-ready.** All examples shown in previous concept renders are targets, not proof of implemented screens or pixel-perfect parity. There are no demo PDF files or user accounts in the app.
+> **Status: native development preview, v0.1.3. Not production-ready.** All examples shown in previous concept renders are targets, not proof of implemented screens or pixel-perfect parity. There are no demo PDF files or user accounts in the app.
 
 ## Real functionality
 
@@ -26,7 +26,7 @@ Folqio is a privacy-oriented, offline-first document app with separately impleme
 | Extract, rotate, reorder | Extract/rotate current page to **flattened** copy; no reorder | Extract, rotate, reorder in a new vector-preserving PDF |
 | Share PDF | Android Sharesheet | iOS ShareLink |
 | Save as a separate PDF file | Android system Save document picker | iOS system ShareLink / Save to Files |
-| Restore last read page | Yes | Yes |
+| Restore last read page | Yes (bounds-checked) | Yes |
 | Internet/account needed for PDF operations | No | No |
 
 ### Important limitations
@@ -39,10 +39,10 @@ Folqio is a privacy-oriented, offline-first document app with separately impleme
 
 ## Development
 
-Android requirements: Android SDK 35, JDK 17, Gradle 8.11.1.
+Android requirements: Android SDK 36, JDK 17, Gradle 8.13, Android Gradle Plugin 8.13.2.
 
 ```sh
-gradle :android:testDebugUnitTest :android:assembleDebug
+gradle :android:testDebugUnitTest :android:lintDebug :android:assembleDebug :android:bundleRelease
 ```
 
 Android APK (debug): `android/build/outputs/apk/debug/android-debug.apk`, uploaded as a CI artifact.
@@ -56,8 +56,14 @@ xcodebuild build -project ios/Folqio.xcodeproj -scheme Folqio -destination 'gene
 
 Build tooling downloads pinned dependencies at development/build time, and packages the runtime code into the apps. It does not fetch scripts, fonts or PDF processing code from a CDN while the app runs. The iOS app relies on Apple's on-device frameworks. Android uses system PDF/camera APIs.
 
+## Signing and distribution
+
+See [Store readiness and signing](docs/STORE_READINESS.md) for Google Play's API 36 target, Xcode 26+, secure upload key environment variables, AAB/IPA requirements, actual platform testing and privacy declarations. CI development APKs are debug-signed and **not** production artifacts.
+
 ## Project docs
 
+- [Store review and signing requirements](docs/STORE_READINESS.md)
+- [Source audit notes](docs/CODE_AUDIT.md)
 - [Brand and design tokens](branding/BRAND.md)
 - [Design parity QA checklist](docs/DESIGN_QA.md)
 - [Manual interaction test checklist](docs/TESTING.md)
