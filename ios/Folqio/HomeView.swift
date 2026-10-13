@@ -1,0 +1,189 @@
+import SwiftUI
+import UniformTypeIdentifiers
+
+struct HomeView: View {
+    @EnvironmentObject private var library: DocumentLibrary
+    @State private var isImporterPresented = false
+    @State private var selectedDocument: DocumentItem?
+    @State private var query = ""
+    @State private var importError: String?
+    @State private var showPrivacy = false
+
+    private var filtered: [DocumentItem] {
+        library.documents.filter { query.isEmpty || $0.filename.localizedCaseInsensitiveContains(query) }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                FolqioColors.midnight.ignoresSafeArea()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        HStack(spacing: 13) {
+                            FolqioMark()
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("FOLQIO")
+                                    .font(.system(size: 29, weight: .black, design: .rounded))
+                                    .foregroundStyle(FolqioColors.pearl)
+                                Text("Your documents. Your device.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(FolqioColors.muted)
+                            }
+                            Spacer()
+                            Button { showPrivacy = true } label: {
+                                Image(systemName: "shield.lefthalf.filled")
+                                    .font(.title2)
+                                    .foregroundStyle(FolqioColors.mint)
+                            }
+                            .accessibilityLabel("Privacy information")
+                        }
+                        .padding(.top, 22)
+
+                        FolqioCard {
+                            VStack(alignment: .leading, spacing: 14) {
+                                Image(systemName: "folder.badge.plus")
+                                    .font(.system(size: 30))
+                                    .foregroundStyle(FolqioColors.mint)
+                                Text("Your documents, in your hands.")
+                                    .font(.title2.bold())
+                                    .foregroundStyle(FolqioColors.pearl)
+                                Text("Read and organize PDFs on your device. No account or cloud required.")
+                                    .foregroundStyle(FolqioColors.muted)
+                                Button {
+                                    isImporterPresented = true
+                                } label: {
+                                    Label("Open PDF", systemImage: "folder")
+                                        .fontWeight(.semibold)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(5)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(FolqioColors.mint)
+                                .foregroundStyle(FolqioColors.midnight)
+                            }
+                        }
+
+                        HStack {
+                            Text("Recent files")
+                                .font(.title2.bold())
+                                .foregroundStyle(FolqioColors.pearl)
+                            Spacer()
+                            Text("\(library.documents.count) documents")
+                                .foregroundStyle(FolqioColors.muted)
+                                .font(.caption)
+                        }
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundStyle(FolqioColors.muted)
+                            TextField("Search file names", text: $query)
+                                .tint(FolqioColors.mint)
+                                .foregroundStyle(FolqioColors.pearl)
+                        }
+                        .padding(15)
+                        .background(FolqioColors.slate, in: RoundedRectangle(cornerRadius: 14))
+
+                        if filtered.isEmpty {
+                            Text(library.documents.isEmpty ? "Open a PDF to see it here." : "No matching documents.")
+                                .foregroundStyle(FolqioColors.muted)
+                                .padding(.vertical, 24)
+                        }
+                        ForEach(filtered) { document in
+                            Button {
+                                selectedDocument = document
+                            } label: {
+                                HStack(spacing: 15) {
+                                    Image(systemName: "doc.text")
+                                        .font(.title2)
+                                        .foregroundStyle(FolqioColors.mint)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(document.filename)
+                                            .fontWeight(.semibold)
+                                            .foregroundStyle(FolqioColors.pearl)
+                                            .lineLimit(2)
+                                        Text("Local PDF")
+                                            .font(.caption)
+                                            .foregroundStyle(FolqioColors.muted)
+                                    }
+                                    Spacer()
+                                    if document.isFavorite {
+                                        Image(systemName: "star.fill")
+                                            .foregroundStyle(FolqioColors.mint)
+                                    }
+                                    Image(systemName: "chevron.right")
+                                        .foregroundStyle(FolqioColors.muted)
+                                }
+                                .padding(16)
+                                .background(FolqioColors.slate, in: RoundedRectangle(cornerRadius: 15))
+                            }
+                            .contextMenu {
+                                Button(document.isFavorite ? "Remove favorite" : "Add favorite",
+                                       systemImage: document.isFavorite ? "star.slash" : "star") {
+                                    library.toggleFavorite(document)
+                                }
+                                ShareLink(item: library.localURL(for: document)) {
+                                    Label("Share copy", systemImage: "square.and.arrow.up")
+                                }
+                                Button("Remove document", systemImage: "trash", role: .destructive) {
+                                    library.remove(document)
+                                }
+                            }
+                        }
+                        Text("PRIVATE  ·  OFFLINE-FIRST  ·  SECURE")
+                            .font(.caption2.weight(.medium))
+                            .tracking(1)
+                            .foregroundStyle(FolqioColors.muted)
+                            .padding(.top, 15)
+                    }
+                    .padding(.horizontal, 22)
+                    .padding(.bottom, 30)
+                }
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .fileImporter(isPresented: $isImporterPresented, allowedContentTypes: [.pdf]) { result in
+                switch result {
+                case .success(let url):
+                    do { selectedDocument = try library.importPDF(from: url) }
+                    catch { importError = error.localizedDescription }
+                case .failure(let error):
+                    importError = error.localizedDescription
+                }
+            }
+            .alert("Could not open PDF", isPresented: Binding(
+                get: { importError != nil },
+                set: { if !$0 { importError = nil } }
+            )) {
+                Button("OK", role: .cancel) { importError = nil }
+            } message: {
+                Text(importError ?? "")
+            }
+            .fullScreenCover(item: $selectedDocument) { item in
+                ReaderView(item: item)
+                    .environmentObject(library)
+            }
+            .sheet(isPresented: $showPrivacy) {
+                PrivacyView()
+                    .presentationDetents([.medium])
+            }
+        }
+        .tint(FolqioColors.mint)
+    }
+}
+
+private struct PrivacyView: View {
+    var body: some View {
+        ZStack {
+            FolqioColors.midnight.ignoresSafeArea()
+            VStack(alignment: .leading, spacing: 18) {
+                FolqioMark(size: 52)
+                Text("Privacy first")
+                    .font(.title.bold())
+                Label("Documents are copied into your app's local storage.", systemImage: "lock.doc")
+                Label("No analytics, tracking or account required.", systemImage: "hand.raised")
+                Label("Your PDFs are never uploaded by Folqio.", systemImage: "wifi.slash")
+                Spacer()
+            }
+            .foregroundStyle(FolqioColors.pearl)
+            .padding(28)
+        }
+    }
+}

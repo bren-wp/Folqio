@@ -1,0 +1,42 @@
+name: Folqio
+options:
+  bundleIdPrefix: com.brendigo
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+targets:
+  Folqio:
+    type: application
+    platform: iOS
+    sources:
+      - Folqio
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.brendigo.folqio
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Folqio
+        INFOPLIST_KEY_UIFileSharingEnabled: YES
+        INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        DEVELOPMENT_TEAM: ""
+  FolqioTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - FolqioTests
+    dependencies:
+      - target: Folqio
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Folqio:
+    build:
+      targets:
+        Folqio: all
+    test:
+      targets:
+        - FolqioTests
