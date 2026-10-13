@@ -350,7 +350,7 @@ struct ReaderView: View {
     }
 
     private func saveNote() {
-        let text = annotationText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = String(annotationText.trimmingCharacters(in: .whitespacesAndNewlines).prefix(2000))
         annotationText = ""
         guard !text.isEmpty,
               let document,
