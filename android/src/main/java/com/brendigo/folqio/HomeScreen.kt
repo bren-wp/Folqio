@@ -47,9 +47,18 @@ internal fun FolqioHome(
     onSelect: (LocalPdf) -> Unit,
     onRemove: (LocalPdf) -> Unit,
     onRename: (LocalPdf, String) -> Boolean,
+    language: String,
+    onLanguageChange: (String) -> Unit,
+    reopenLastPage: Boolean,
+    onReopenChange: (Boolean) -> Unit,
+    confirmRemoval: Boolean,
+    onConfirmChange: (Boolean) -> Unit,
+    onZip: (List<LocalPdf>) -> Unit,
     busy: Boolean,
-    error: String?
+    error: String?,
+    notice: String?
 ) {
+    fun tr(key: String) = FolqioLanguages.text(language, key)
     var tab by remember { mutableStateOf(FolqioTab.HOME) }
     var query by remember { mutableStateOf("") }
     var renaming by remember { mutableStateOf<LocalPdf?>(null) }
@@ -111,10 +120,10 @@ internal fun FolqioHome(
         bottomBar = {
             NavigationBar(containerColor = slate) {
                 listOf(
-                    Triple(FolqioTab.HOME, Icons.Default.Home, "Home"),
-                    Triple(FolqioTab.FILES, Icons.Default.Folder, "Files"),
-                    Triple(FolqioTab.FAVORITES, Icons.Default.Star, "Favorites"),
-                    Triple(FolqioTab.SETTINGS, Icons.Default.Settings, "Settings")
+                    Triple(FolqioTab.HOME, Icons.Default.Home, tr("home")),
+                    Triple(FolqioTab.FILES, Icons.Default.Folder, tr("files")),
+                    Triple(FolqioTab.FAVORITES, Icons.Default.Star, tr("favorites")),
+                    Triple(FolqioTab.SETTINGS, Icons.Default.Settings, tr("settings"))
                 ).forEach { (item, icon, title) ->
                     NavigationBarItem(
                         selected = tab == item, onClick = { tab = item },
@@ -150,18 +159,16 @@ internal fun FolqioHome(
 
             if (tab == FolqioTab.SETTINGS) {
                 item {
-                    Card(colors = CardDefaults.cardColors(containerColor = slate),
-                        shape = RoundedCornerShape(20.dp)) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                            Text("Privacy first", color = pearl, style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold)
-                            Text("Documents are processed locally. No Folqio account, analytics or cloud upload.",
-                                color = muted)
-                            Text("PDFs are opened through the system file picker. Camera and image access are initiated only by you.",
-                                color = muted)
-                            Text("Your documents. Your device.", color = mint)
-                        }
-                    }
+                    FolqioSettingsScreen(
+                        language = language,
+                        onLanguageChange = onLanguageChange,
+                        reopenLastPage = reopenLastPage,
+                        onReopenChange = onReopenChange,
+                        confirmRemoval = confirmRemoval,
+                        onConfirmChange = onConfirmChange,
+                        files = files,
+                        onExport = onZip
+                    )
                 }
             } else {
                 if (tab == FolqioTab.HOME) {
@@ -176,7 +183,7 @@ internal fun FolqioHome(
                                 Button(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
                                     Icon(Icons.Default.FolderOpen, contentDescription = null)
                                     Spacer(Modifier.width(8.dp))
-                                    Text("Open PDF")
+                                    Text(tr("open"))
                                 }
                             }
                         }
@@ -186,9 +193,9 @@ internal fun FolqioHome(
                             style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(10.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            QuickAction("Open", Icons.Default.FolderOpen, Modifier.weight(1f), onOpen)
-                            QuickAction("Scan", Icons.Default.CameraAlt, Modifier.weight(1f), onCamera)
-                            QuickAction("Photos", Icons.Default.Photo, Modifier.weight(1f), onPhoto)
+                            QuickAction(tr("open"), Icons.Default.FolderOpen, Modifier.weight(1f), onOpen)
+                            QuickAction(tr("scan"), Icons.Default.CameraAlt, Modifier.weight(1f), onCamera)
+                            QuickAction(tr("photos"), Icons.Default.Photo, Modifier.weight(1f), onPhoto)
                         }
                         Spacer(Modifier.height(9.dp))
                         Card(
@@ -201,7 +208,7 @@ internal fun FolqioHome(
                                 Icon(Icons.Default.CallMerge, contentDescription = null, tint = mint)
                                 Spacer(Modifier.width(10.dp))
                                 Column {
-                                    Text("Merge PDF files", color = pearl, fontWeight = FontWeight.SemiBold)
+                                    Text(tr("merge"), color = pearl, fontWeight = FontWeight.SemiBold)
                                     Text("2–5 files · flattened output · max 50 pages",
                                         color = muted, style = MaterialTheme.typography.bodySmall)
                                 }
@@ -210,19 +217,20 @@ internal fun FolqioHome(
                     }
                 }
                 item {
-                    Text(if (tab == FolqioTab.FAVORITES) "Favorites" else "Recent files",
+                    Text(if (tab == FolqioTab.FAVORITES) tr("favorites") else tr("recent"),
                         color = pearl, style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(10.dp))
                     OutlinedTextField(
                         value = query, onValueChange = { query = it },
-                        singleLine = true, label = { Text("Search file names") },
+                        singleLine = true, label = { Text(tr("search")) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
                 if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth(), color = mint) }
                 if (error != null) item { Text(error, color = MaterialTheme.colorScheme.error) }
+                if (notice != null) item { Text(notice, color = mint) }
                 if (filtered.isEmpty()) {
                     item {
                         Text(
@@ -267,7 +275,7 @@ internal fun FolqioHome(
                                     )
                                     DropdownMenuItem(
                                         text = { Text("Remove") },
-                                        onClick = { menuOpen = false; removing = file }
+                                        onClick = { menuOpen = false; if (confirmRemoval) removing = file else onRemove(file) }
                                     )
                                 }
                             }

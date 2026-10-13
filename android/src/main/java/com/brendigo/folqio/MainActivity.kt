@@ -73,6 +73,13 @@ class MainActivity : ComponentActivity() {
 private fun FolqioApp(initialUri: Uri?) {
     val context = LocalContext.current
     val library = remember { PdfLibrary(context.applicationContext) }
+    val preferences = remember { FolqioPreferences(context.applicationContext) }
+    var language by remember { mutableStateOf(preferences.language) }
+    var reopenLastPage by remember { mutableStateOf(preferences.reopenLastDocument) }
+    var confirmRemoval by remember { mutableStateOf(preferences.confirmRemoval) }
+    var zipSelection by remember { mutableStateOf<List<LocalPdf>>(emptyList()) }
+    var exportingZip by remember { mutableStateOf(false) }
+    var zipResult by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     var recent by remember { mutableStateOf(library.recent()) }
     var current by remember { mutableStateOf<LocalPdf?>(null) }
@@ -119,6 +126,34 @@ private fun FolqioApp(initialUri: Uri?) {
     }
 
     LaunchedEffect(initialUri) { initialUri?.let { open(it) } }
+
+    val zipPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip")
+    ) { destination ->
+        if (destination != null && zipSelection.isNotEmpty()) {
+            val selected = zipSelection
+            zipSelection = emptyList()
+            scope.launch {
+                exportingZip = true
+                zipResult = null
+                try {
+                    val exported = withContext(Dispatchers.IO) {
+                        PdfZipExport.export(context.applicationContext, selected, destination)
+                    }
+                    zipResult = "$exported PDF documents added to your ZIP archive."
+                    importError = null
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (failure: Exception) {
+                    importError = "ZIP export failed: ${failure.localizedMessage ?: "try a different folder"}"
+                } finally {
+                    exportingZip = false
+                }
+            }
+        } else {
+            zipSelection = emptyList()
+        }
+    }
 
     val pdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -188,6 +223,25 @@ private fun FolqioApp(initialUri: Uri?) {
             if (file == null) {
                 FolqioHome(
                     files = recent,
+                    language = language,
+                    onLanguageChange = { code ->
+                        preferences.language = code
+                        language = code
+                    },
+                    reopenLastPage = reopenLastPage,
+                    onReopenChange = { value ->
+                        preferences.reopenLastDocument = value
+                        reopenLastPage = value
+                    },
+                    confirmRemoval = confirmRemoval,
+                    onConfirmChange = { value ->
+                        preferences.confirmRemoval = value
+                        confirmRemoval = value
+                    },
+                    onZip = { selected ->
+                        zipSelection = selected
+                        zipPicker.launch("Folqio-documents.zip")
+                    },
                     isFavorite = { key -> favoriteRevision.let { library.isFavorite(key) } },
                     onFavorite = { key ->
                         library.toggleFavorite(key)
@@ -218,12 +272,13 @@ private fun FolqioApp(initialUri: Uri?) {
                         if (changed) recent = library.recent()
                         changed
                     },
-                    busy = creating || merging,
-                    error = importError
+                    busy = creating || merging || exportingZip,
+                    error = importError,
+                    notice = zipResult
                 )
             } else {
                 PdfReader(
-                    file = file, library = library, onBack = { current = null },
+                    file = file, library = library, reopenLastPage = reopenLastPage, onBack = { current = null },
                     onRemove = {
                         if (library.remove(file)) {
                             recent = library.recent()
@@ -242,7 +297,7 @@ private fun FolqioApp(initialUri: Uri?) {
 }
 
 @Composable
-private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, onRemove: () -> Unit, onCreated: (LocalPdf) -> Unit) {
+private fun PdfReader(file: LocalPdf, library: PdfLibrary, reopenLastPage: Boolean, onBack: () -> Unit, onRemove: () -> Unit, onCreated: (LocalPdf) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var savingCopy by remember(file.uri) { mutableStateOf(false) }
@@ -293,7 +348,7 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, o
     var exporting by remember(file.uri) { mutableStateOf(false) }
     var exportError by remember(file.uri) { mutableStateOf<String?>(null) }
 
-    var page by remember(file.uri) { mutableIntStateOf(library.lastPage(file.uri)) }
+    var page by remember(file.uri) { mutableIntStateOf(if (reopenLastPage) library.lastPage(file.uri) else 0) }
 
     fun exportPage(rotate: Boolean) {
         scope.launch {

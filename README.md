@@ -31,7 +31,8 @@ Folqio puts your documents first. Its dark midnight-navy interface, carefully ba
 | **📁 Stay organized** | Find documents by name, rename library labels, save favorites, and keep recent files close. |
 | **🧩 Work with pages** | Create multi-page PDFs, extract or rotate pages, and combine documents. Available page tools vary by platform. |
 | **🔎 Find what matters** | Search selectable PDF text and recognize scanned text on iOS with on-device OCR. |
-| **↗️ Share on your terms** | Export or share a document only when you choose to do so. |
+| **↗️ Share on your terms** | Export selected PDFs to a ZIP archive or share a document whenever you choose. |
+| **🌍 Choose your language** | 25 choices for navigation and settings, including Croatian. |
 
 ## See Folqio in action
 
@@ -54,7 +55,7 @@ Both editions share Folqio's visual identity but use the strengths of their resp
 
 **iPhone and iPad** add PDFKit text search, note and highlight annotations, multi-page document-camera scanning, on-device OCR, and page operations that retain PDF content.
 
-**Important:** Android's extracted, rotated, and merged PDF copies are rasterized. Those operations do not preserve searchable text, forms, or signatures and must not be treated as secure redaction. Some advanced PDF editing features remain on the roadmap.
+**Important:** Main navigation and settings have translations; some other screens still appear in English. Android's extracted, rotated, and merged PDF copies are rasterized. Those operations do not preserve searchable text, forms, or signatures and must not be treated as secure redaction. Some advanced PDF editing features remain on the roadmap.
 
 ## Discover Folqio
 

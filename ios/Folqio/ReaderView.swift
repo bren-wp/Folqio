@@ -208,7 +208,7 @@ struct ReaderView: View {
         let loaded = PDFDocument(url: library.localURL(for: item))
         document = loaded
         if loaded?.isLocked == true { showingPassword = true }
-        currentPageIndex = min(item.lastReadPage, max(0, (loaded?.pageCount ?? 1) - 1))
+        currentPageIndex = min(reopenLastPage ? item.lastReadPage : 0, max(0, (loaded?.pageCount ?? 1) - 1))
     }
 
     private func previousPage() {
