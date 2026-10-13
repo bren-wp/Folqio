@@ -12,6 +12,8 @@ struct ReaderView: View {
     @State private var query = ""
     @State private var selectedSearchResult: PDFSelection?
     @State private var showingPages = false
+    @State private var showingPassword = false
+    @State private var unlockGeneration = 0
     @State private var showingNote = false
     @State private var noteText = ""
     @State private var message: String?
@@ -29,6 +31,14 @@ struct ReaderView: View {
                 Button("Save", action: saveNote)
             } message: {
                 Text("Adds a note annotation to the current page.")
+            }
+            .sheet(isPresented: $showingPassword) {
+                if let document {
+                    UnlockDocumentSheet(document: document) {
+                        showingPassword = false
+                        unlockGeneration += 1
+                    }
+                }
             }
             .sheet(isPresented: $showingPages) {
                 PageToolsView(item: item) { _ in
@@ -114,6 +124,7 @@ struct ReaderView: View {
                       initialPage: item.lastReadPage,
                       currentPageIndex: $currentPageIndex,
                       selection: selectedSearchResult)
+                .id(unlockGeneration)
                 .background(Color.white)
         } else {
             Spacer()
@@ -170,6 +181,7 @@ struct ReaderView: View {
     private func loadDocument() {
         let loaded = PDFDocument(url: library.localURL(for: item))
         document = loaded
+        if loaded?.isLocked == true { showingPassword = true }
         currentPageIndex = min(item.lastReadPage, max(0, (loaded?.pageCount ?? 1) - 1))
     }
 
