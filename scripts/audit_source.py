@@ -36,6 +36,18 @@ if not (root / "android/src/main/res/mipmap-anydpi-v26/ic_launcher.xml").is_file
     issues.append("Android adaptive launcher icon missing")
 if not (root / "ios/Folqio/PrivacyInfo.xcprivacy").is_file():
     issues.append("Apple privacy manifest missing")
+else:
+    import plistlib
+    try:
+        privacy = plistlib.loads((root / "ios/Folqio/PrivacyInfo.xcprivacy").read_bytes())
+        allowed = {x["NSPrivacyAccessedAPIType"]: x["NSPrivacyAccessedAPITypeReasons"]
+                   for x in privacy["NSPrivacyAccessedAPITypes"]}
+        if "CA92.1" not in allowed.get("NSPrivacyAccessedAPICategoryUserDefaults", []):
+            issues.append("Apple UserDefaults API reason missing")
+        if "C617.1" not in allowed.get("NSPrivacyAccessedAPICategoryFileTimestamp", []):
+            issues.append("Apple file timestamp API reason missing")
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        issues.append(f"Invalid Apple privacy manifest: {exc}")
 if "MARKETING_VERSION: \"0.1.6\"" not in project or 'versionName = "0.1.6"' not in gradle:
     issues.append("Platform versions are inconsistent")
 if issues:

@@ -71,6 +71,22 @@ jobs:
           if not match or int(match.group(1)) < 26:
               raise SystemExit("App Store uploads in 2026 require Xcode 26 or newer.")
           PY
+      - name: Validate Apple privacy declarations
+        run: |
+          plutil -lint ios/Folqio/PrivacyInfo.xcprivacy
+          python3 - <<'PY'
+          import plistlib
+          with open("ios/Folqio/PrivacyInfo.xcprivacy", "rb") as f:
+              data = plistlib.load(f)
+          declarations = {
+              item["NSPrivacyAccessedAPIType"]: item["NSPrivacyAccessedAPITypeReasons"]
+              for item in data["NSPrivacyAccessedAPITypes"]
+          }
+          assert "CA92.1" in declarations["NSPrivacyAccessedAPICategoryUserDefaults"]
+          assert "C617.1" in declarations["NSPrivacyAccessedAPICategoryFileTimestamp"]
+          assert data["NSPrivacyTracking"] is False
+          print("Apple privacy manifest categories and allowed reasons verified")
+          PY
       - name: Generate local Folqio App Store icon
         run: swift ios/generate_app_icon.swift
       - name: Generate Xcode project
