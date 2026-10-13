@@ -141,6 +141,12 @@ struct ReaderView: View {
             }
             .disabled(document == nil)
             Spacer()
+            Button(action: highlightSearchResult) {
+                Image(systemName: "highlighter")
+            }
+            .disabled(selectedSearchResult == nil)
+            .accessibilityLabel("Highlight found text")
+            Spacer()
             Button(action: { showingPages = true }) {
                 Image(systemName: "square.grid.2x2")
             }
@@ -183,6 +189,30 @@ struct ReaderView: View {
         guard let document, !query.isEmpty else { return }
         selectedSearchResult = document.findString(query, withOptions: .caseInsensitive).first
         if selectedSearchResult == nil { message = "No matching text found." }
+    }
+
+    private func highlightSearchResult() {
+        guard let document, let selection = selectedSearchResult,
+              let selectedPage = selection.pages.first,
+              selection.pages.count == 1 else {
+            message = "Find text on one page before highlighting."
+            return
+        }
+        let bounds = selection.bounds(for: selectedPage)
+        guard !bounds.isEmpty else {
+            message = "The selected text cannot be highlighted."
+            return
+        }
+        let annotation = PDFAnnotation(bounds: bounds, forType: .highlight, withProperties: nil)
+        annotation.color = UIColor.systemYellow.withAlphaComponent(0.45)
+        selectedPage.addAnnotation(annotation)
+        if document.write(to: library.localURL(for: item)) {
+            selectedSearchResult = nil
+            message = "Highlight saved to your local document."
+        } else {
+            selectedPage.removeAnnotation(annotation)
+            message = "The highlight could not be saved."
+        }
     }
 
     private func saveNote() {
