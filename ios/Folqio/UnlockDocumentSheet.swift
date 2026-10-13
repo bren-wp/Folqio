@@ -4,6 +4,7 @@ import PDFKit
 struct UnlockDocumentSheet: View {
     let document: PDFDocument
     let onUnlocked: () -> Void
+    let onCancel: () -> Void
 
     @State private var password = ""
     @State private var invalid = false
@@ -49,9 +50,17 @@ struct UnlockDocumentSheet: View {
                 .padding(24)
             }
             .navigationTitle("Unlock document")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") {
+                        password = ""
+                        onCancel()
+                    }
+                }
+            }
             .navigationBarTitleDisplayMode(.inline)
         }
         .tint(FolqioColors.mint)
-        .interactiveDismissDisabled(document.isLocked)
+        .interactiveDismissDisabled()
     }
 }
