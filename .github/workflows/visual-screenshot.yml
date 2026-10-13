@@ -1,28 +1,26 @@
-name: Capture Real Android Screenshot
+name: Capture Authentic Folqio Android Screens
 
 on:
   push:
-    branches:
-      - feat/v0.1.4-release-polish-readme
+    branches: [feat/v0.1.7-secure-import-full-qa]
     paths-ignore:
-      - docs/media/android-home.png
+      - README.md
+      - docs/media/**
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: folqio-visual-snapshot
+  group: folqio-real-screenshots
   cancel-in-progress: true
 
 jobs:
-  screenshot:
-    name: Capture running Android home
+  screenshots:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: feat/v0.1.4-release-polish-readme
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -30,9 +28,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-      - name: Build Android debug APK
+      - name: Build Android app
         run: gradle :android:assembleDebug
-      - name: Screenshot of actual app running in emulator
+      - name: Capture actual app navigation in emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -43,20 +41,37 @@ jobs:
           script: |
             adb install -r android/build/outputs/apk/debug/android-debug.apk
             adb shell am start -n com.brendigo.folqio/.MainActivity
-            sleep 7
-            mkdir -p docs/media
-            adb exec-out screencap -p > docs/media/android-home.png
-            test -s docs/media/android-home.png
-            file docs/media/android-home.png
-      - name: Save authentic screenshot to this feature branch
+            python3 scripts/capture_android_ui.py
+      - name: Include actual Folqio screens in public README
         run: |
-          test -s docs/media/android-home.png
+          python3 - <<'PY'
+          from pathlib import Path
+          readme = Path("README.md")
+          content = readme.read_text()
+          start = content.index("## See Folqio in action")
+          end = content.index("## Privacy is part of the experience", start)
+          section = """## See Folqio in action
+
+          <div align="center">
+            <img src="docs/media/android-home.png" alt="Actual Folqio Android home screen" width="225" />
+            <img src="docs/media/android-files.png" alt="Actual Folqio Android file library" width="225" />
+            <img src="docs/media/android-settings.png" alt="Actual Folqio Android settings" width="225" />
+            <img src="docs/media/android-favorites.png" alt="Actual Folqio Android favorites" width="225" />
+            <p><sub>Real screens captured from Folqio running in an Android emulator. No generated or staged UI.</sub></p>
+          </div>
+
+          **Midnight navy · Slate · Mint.** Comfortable controls and a focused, elegant document workspace.
+
+          """
+          readme.write_text(content[:start] + section + content[end:])
+          PY
+      - name: Save screenshots to feature branch
+        run: |
+          test -s docs/media/android-settings.png
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/media/android-home.png
-          if git diff --cached --quiet; then
-            echo "Screenshot unchanged"
-          else
-            git commit -m "docs: capture actual Android home screen in emulator"
-            git push origin HEAD:refs/heads/feat/v0.1.4-release-polish-readme
+          git add docs/media/android-*.png README.md
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: capture real Android app screens and refresh README imagery"
+            git push origin HEAD:refs/heads/feat/v0.1.7-secure-import-full-qa
           fi
