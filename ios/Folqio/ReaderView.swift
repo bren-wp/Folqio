@@ -1,6 +1,14 @@
 import SwiftUI
 import PDFKit
 
+private enum AnnotationEditor: String, Identifiable {
+    case note
+    case text
+
+    var id: String { rawValue }
+    var title: String { self == .note ? "Add a note" : "Add a text overlay" }
+}
+
 struct ReaderView: View {
     @EnvironmentObject private var library: DocumentLibrary
     @Environment(\.dismiss) private var dismiss
@@ -15,10 +23,8 @@ struct ReaderView: View {
     @State private var showingPages = false
     @State private var showingPassword = false
     @State private var unlockGeneration = 0
-    @State private var showingNote = false
-    @State private var noteText = ""
-    @State private var showingTextOverlay = false
-    @State private var overlayText = ""
+    @State private var annotationEditor: AnnotationEditor?
+    @State private var annotationText = ""
     @State private var message: String?
     @State private var recognizing = false
     @State private var ocrProgress: String?
@@ -33,19 +39,35 @@ struct ReaderView: View {
             .onChange(of: currentPageIndex) { page in
                 library.recordPage(page, in: item)
             }
-            .alert("Add a PDF note", isPresented: $showingNote) {
-                TextField("Note text", text: $noteText)
-                Button("Cancel", role: .cancel) { noteText = "" }
-                Button("Save", action: saveNote)
-            } message: {
-                Text("Saves a note in a new PDF copy. Your original stays unchanged.")
-            }
-            .alert("Add text to a PDF copy", isPresented: $showingTextOverlay) {
-                TextField("Text to add", text: $overlayText)
-                Button("Cancel", role: .cancel) { overlayText = "" }
-                Button("Add text", action: saveTextOverlay)
-            } message: {
-                Text("Places editable text annotation on the current page of a new PDF copy. Your original remains unchanged. Existing text is not replaced.")
+            .sheet(item: $annotationEditor) { editor in
+                NavigationStack {
+                    Form {
+                        Section {
+                            TextField("Enter text", text: $annotationText, axis: .vertical)
+                                .lineLimit(3...8)
+                        } footer: {
+                            Text("An editable PDF annotation is added to a new document copy. Existing PDF text is not replaced, and signatures in edited copies may no longer validate.")
+                        }
+                    }
+                    .navigationTitle(editor.title)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") {
+                                annotationText = ""
+                                annotationEditor = nil
+                            }
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Save copy") {
+                                if editor == .note { saveNote() } else { saveTextOverlay() }
+                                annotationEditor = nil
+                            }
+                            .disabled(annotationText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
+                }
+                .tint(FolqioColors.mint)
             }
             .sheet(isPresented: $showingPassword) {
                 if let document {
@@ -139,7 +161,7 @@ struct ReaderView: View {
             }
             .disabled(document == nil || document?.isLocked == true || recognizing)
             .accessibilityLabel("Offline OCR options")
-            Button { showingTextOverlay = true } label: {
+            Button { annotationText = ""; annotationEditor = .text } label: {
                 Image(systemName: "text.badge.plus")
             }
             .disabled(document == nil || document?.isLocked == true)
@@ -200,7 +222,10 @@ struct ReaderView: View {
             ReaderAction(symbol: isFavorite ? "star.fill" : "star",
                          label: "Toggle favorite") { library.toggleFavorite(item) }
             ReaderAction(symbol: "note.text.badge.plus", label: "Add note to copy",
-                         disabled: document == nil || document?.isLocked == true) { showingNote = true }
+                         disabled: document == nil || document?.isLocked == true) {
+                annotationText = ""
+                annotationEditor = .note
+            }
             ReaderAction(symbol: "highlighter", label: "Highlight found text",
                          disabled: selectedSearchResult == nil, action: highlightSearchResult)
             ReaderAction(symbol: "square.grid.2x2", label: "Manage PDF pages",
@@ -325,8 +350,8 @@ struct ReaderView: View {
     }
 
     private func saveNote() {
-        let text = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
-        noteText = ""
+        let text = annotationText.trimmingCharacters(in: .whitespacesAndNewlines)
+        annotationText = ""
         guard !text.isEmpty,
               let document,
               let page = document.page(at: currentPageIndex) else { return }
@@ -342,8 +367,8 @@ struct ReaderView: View {
     }
 
     private func saveTextOverlay() {
-        let text = overlayText.trimmingCharacters(in: .whitespacesAndNewlines)
-        overlayText = ""
+        let text = annotationText.trimmingCharacters(in: .whitespacesAndNewlines)
+        annotationText = ""
         guard !text.isEmpty, let page = document?.page(at: currentPageIndex) else { return }
         let visible = page.bounds(for: .mediaBox).insetBy(dx: 18, dy: 18)
         guard visible.width > 0, visible.height > 0 else {
