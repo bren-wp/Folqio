@@ -29,8 +29,9 @@ struct FolqioSettingsView: View {
 
                 Section(tr("language")) {
                     Picker(tr("language"), selection: $language) {
-                        ForEach(FolqioLanguages.supported, id: \.code) { item in
-                            Text(item.name).tag(item.code)
+                        ForEach(FolqioLanguages.supported.indices, id: \.self) { index in
+                            Text(FolqioLanguages.supported[index].name)
+                                .tag(FolqioLanguages.supported[index].code)
                         }
                     }
                     Text("Main navigation and settings are translated. Other screens may use English.")
