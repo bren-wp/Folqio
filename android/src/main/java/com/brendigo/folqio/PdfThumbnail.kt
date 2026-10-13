@@ -29,6 +29,11 @@ internal fun PdfThumbnail(source: String) {
     val context = LocalContext.current
     var bitmap by remember(source) { mutableStateOf<Bitmap?>(null) }
 
+    DisposableEffect(bitmap) {
+        val displayed = bitmap
+        onDispose { displayed?.recycle() }
+    }
+
     LaunchedEffect(source) {
         val result = try {
             withContext(Dispatchers.IO) {

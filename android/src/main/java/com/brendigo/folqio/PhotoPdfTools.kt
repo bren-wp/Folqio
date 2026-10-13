@@ -37,9 +37,6 @@ object PhotoPdfTools {
         File(File(context.filesDir, "captures"), filename).delete()
     }
 
-    fun createPdf(context: Context, imageUri: Uri): LocalPdf =
-        createPdf(context, listOf(imageUri))
-
     fun createPdf(context: Context, imageUris: List<Uri>): LocalPdf {
         try {
             require(PhotoSelectionPolicy.isValidCount(imageUris.size)) {

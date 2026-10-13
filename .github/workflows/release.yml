@@ -24,9 +24,22 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.11.1'
+          gradle-version: '8.13'
+      - name: Install Android 16 SDK
+        run: |
+          if [ -d "${ANDROID_HOME}/platforms/android-36" ]; then
+            echo "Android API 36 already installed"
+          else
+            SDKMANAGER="$(find "${ANDROID_HOME}" -type f -name sdkmanager -print -quit)"
+            if [ -z "$SDKMANAGER" ]; then
+              echo "::error::Android SDK command-line tools missing on runner"
+              exit 1
+            fi
+            yes | "$SDKMANAGER" --licenses >/dev/null || true
+            "$SDKMANAGER" "platforms;android-36"
+          fi
       - name: Run Android unit tests and package
-        run: gradle :android:testDebugUnitTest :android:assembleDebug
+        run: gradle :android:testDebugUnitTest :android:lintDebug :android:assembleDebug :android:bundleRelease
       - name: Verify APK artifact exists
         run: |
           test -s android/build/outputs/apk/debug/android-debug.apk
@@ -38,14 +51,25 @@ jobs:
           if-no-files-found: error
 
   ios:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - name: Generate local Folqio App Store icon
+        run: swift ios/generate_app_icon.swift
       - name: Generate Xcode project
         run: |
           brew install xcodegen
           xcodegen generate --spec ios/project.yml --project ios
+      - name: Verify Xcode 26+ SDK baseline
+        run: |
+          xcodebuild -version
+          python3 - <<'PY'
+          import re, subprocess
+          match = re.search(r"Xcode ([0-9]+)", subprocess.check_output(["xcodebuild", "-version"], text=True))
+          if not match or int(match.group(1)) < 26:
+              raise SystemExit("Xcode 26 or newer required")
+          PY
       - name: Compile app and unit tests for iOS simulator
         run: |
           xcodebuild build-for-testing \

@@ -4,21 +4,49 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Upload-key credentials are optional for local/CI builds and never committed to source.
+// Release AABs are only Play-upload-ready when all values are supplied securely.
+val keystorePath = providers.environmentVariable("FOLQIO_KEYSTORE_PATH").orNull
+val keystorePassword = providers.environmentVariable("FOLQIO_KEYSTORE_PASSWORD").orNull
+val uploadKeyAlias = providers.environmentVariable("FOLQIO_KEY_ALIAS").orNull
+val uploadKeyPassword = providers.environmentVariable("FOLQIO_KEY_PASSWORD").orNull
+val uploadKeyAvailable = listOf(
+    keystorePath, keystorePassword, uploadKeyAlias, uploadKeyPassword
+).all { !it.isNullOrBlank() }
+
 android {
+    signingConfigs {
+        if (uploadKeyAvailable) {
+            create("upload") {
+                storeFile = file(requireNotNull(keystorePath))
+                storePassword = requireNotNull(keystorePassword)
+                keyAlias = requireNotNull(uploadKeyAlias)
+                keyPassword = requireNotNull(uploadKeyPassword)
+            }
+        }
+    }
+
     namespace = "com.brendigo.folqio"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.brendigo.folqio"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 3
-        versionName = "0.1.2"
+        targetSdk = 36
+        versionCode = 4
+        versionName = "0.1.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
-        release { isMinifyEnabled = false }
+        release {
+            if (uploadKeyAvailable) {
+                signingConfig = signingConfigs.getByName("upload")
+            }
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
     }
 
     buildFeatures { compose = true }

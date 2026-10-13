@@ -15,8 +15,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.CallMerge
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -56,6 +55,7 @@ internal fun FolqioHome(
     var renaming by remember { mutableStateOf<LocalPdf?>(null) }
     var renameText by remember { mutableStateOf("") }
     var invalidRename by remember { mutableStateOf(false) }
+    var removing by remember { mutableStateOf<LocalPdf?>(null) }
     val filtered = files.filter {
         (tab != FolqioTab.FAVORITES || isFavorite(it.uri)) &&
             it.name.contains(query, ignoreCase = true)
@@ -83,6 +83,27 @@ internal fun FolqioHome(
                 }) { Text("Save") }
             },
             dismissButton = { TextButton(onClick = { renaming = null }) { Text("Cancel") } }
+        )
+    }
+    if (removing != null) {
+        AlertDialog(
+            onDismissRequest = { removing = null },
+            title = { Text("Remove document?") },
+            text = {
+                Text(
+                    "Files created in Folqio are permanently deleted. " +
+                    "Imported PDFs remain at their original location."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    removing?.let(onRemove)
+                    removing = null
+                }) { Text("Remove") }
+            },
+            dismissButton = {
+                TextButton(onClick = { removing = null }) { Text("Cancel") }
+            }
         )
     }
     Scaffold(
@@ -222,19 +243,33 @@ internal fun FolqioHome(
                             Spacer(Modifier.width(12.dp))
                             Text(file.name, color = pearl, maxLines = 2,
                                 overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                            IconButton(onClick = { onFavorite(file.uri) }) {
-                                Icon(if (isFavorite(file.uri)) Icons.Default.Star else Icons.Default.StarBorder,
-                                    contentDescription = "Toggle favorite", tint = mint)
-                            }
-                            IconButton(onClick = {
-                                renaming = file
-                                renameText = file.name
-                                invalidRename = false
-                            }) {
-                                Icon(Icons.Default.Edit, "Rename display label", tint = muted)
-                            }
-                            IconButton(onClick = { onRemove(file) }) {
-                                Icon(Icons.Default.Close, "Remove from recents", tint = muted)
+                            var menuOpen by remember(file.uri) { mutableStateOf(false) }
+                            Box {
+                                IconButton(onClick = { menuOpen = true }) {
+                                    Icon(Icons.Default.MoreVert, "Document options", tint = muted)
+                                }
+                                DropdownMenu(
+                                    expanded = menuOpen,
+                                    onDismissRequest = { menuOpen = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(if (isFavorite(file.uri)) "Remove favorite" else "Add favorite") },
+                                        onClick = { menuOpen = false; onFavorite(file.uri) }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Rename") },
+                                        onClick = {
+                                            menuOpen = false
+                                            renaming = file
+                                            renameText = file.name
+                                            invalidRename = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Remove") },
+                                        onClick = { menuOpen = false; removing = file }
+                                    )
+                                }
                             }
                         }
                     }
