@@ -58,6 +58,11 @@ struct PageToolsView: View {
                         actionButton("Extract selected page", icon: "square.on.square") { document in
                             try DocumentTools.extract(document, indices: [pageIndex])
                         }
+                        if document?.pageCount ?? 0 > 1 {
+                            actionButton("Delete selected page in copy", icon: "trash") { document in
+                                try DocumentTools.deletedCopy(document, index: pageIndex)
+                            }
+                        }
                         actionButton("Move page earlier", icon: "arrow.up") { document in
                             try DocumentTools.movedCopy(document, from: pageIndex, to: max(0, pageIndex - 1))
                         }
