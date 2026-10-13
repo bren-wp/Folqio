@@ -133,6 +133,43 @@ final class DocumentToolsTests: XCTestCase {
         let moved = try DocumentTools.movedCopy(rotated, from: 0, to: 2)
         XCTAssertEqual(moved.pageCount, 3)
     }
+
+    func testAnnotationCreatesIndependentPDFWithoutChangingSource() throws {
+        let original = makePDF(pages: 2)
+        let annotation = PDFAnnotation(bounds: CGRect(x: 10, y: 20, width: 80, height: 35),
+                                       forType: .freeText, withProperties: nil)
+        annotation.contents = "Approved"
+        let edited = try DocumentTools.annotatedCopy(original, index: 1, annotation: annotation)
+
+        XCTAssertEqual(original.page(at: 1)?.annotations.count, 0)
+        XCTAssertEqual(edited.page(at: 1)?.annotations.count, 1)
+        XCTAssertEqual(edited.page(at: 1)?.annotations.first?.contents, "Approved")
+        XCTAssertEqual(edited.pageCount, 2)
+        XCTAssertThrowsError(try DocumentTools.annotatedCopy(original, index: 2,
+                                                              annotation: annotation))
+    }
+
+    func testAnnotatedCopyPersistedSeparatelyWithOriginalBytesUnchanged() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = DocumentLibrary(rootURL: root)
+        let original = try library.createPDF(makePDF(pages: 1), named: "Original.pdf")
+        let originalURL = library.localURL(for: original)
+        let originalBytes = try Data(contentsOf: originalURL)
+        let source = try XCTUnwrap(PDFDocument(url: originalURL))
+        let annotation = PDFAnnotation(bounds: CGRect(x: 10, y: 10, width: 20, height: 20),
+                                       forType: .text, withProperties: nil)
+        annotation.contents = "Private note"
+
+        let edited = try DocumentTools.annotatedCopy(source, index: 0, annotation: annotation)
+        let saved = try library.createPDF(edited, named: "Note - Original.pdf")
+        let savedPDF = try XCTUnwrap(PDFDocument(url: library.localURL(for: saved)))
+        XCTAssertNotEqual(saved.id, original.id)
+        XCTAssertEqual(try Data(contentsOf: originalURL), originalBytes)
+        XCTAssertEqual(PDFDocument(url: originalURL)?.page(at: 0)?.annotations.count, 0)
+        XCTAssertEqual(savedPDF.page(at: 0)?.annotations.count, 1)
+        XCTAssertEqual(savedPDF.page(at: 0)?.annotations.first?.contents, "Private note")
+    }
 }
 
 @MainActor
