@@ -278,7 +278,7 @@ private fun FolqioApp(initialUri: Uri?) {
                 )
             } else {
                 PdfReader(
-                    file = file, library = library, reopenLastPage = reopenLastPage, onBack = { current = null },
+                    file = file, library = library, reopenLastPage = reopenLastPage, confirmRemoval = confirmRemoval, onBack = { current = null },
                     onRemove = {
                         if (library.remove(file)) {
                             recent = library.recent()
@@ -297,7 +297,7 @@ private fun FolqioApp(initialUri: Uri?) {
 }
 
 @Composable
-private fun PdfReader(file: LocalPdf, library: PdfLibrary, reopenLastPage: Boolean, onBack: () -> Unit, onRemove: () -> Unit, onCreated: (LocalPdf) -> Unit) {
+private fun PdfReader(file: LocalPdf, library: PdfLibrary, reopenLastPage: Boolean, confirmRemoval: Boolean, onBack: () -> Unit, onRemove: () -> Unit, onCreated: (LocalPdf) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var savingCopy by remember(file.uri) { mutableStateOf(false) }
@@ -429,7 +429,7 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, reopenLastPage: Boole
                 error != null -> Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                     Text(error!!, color = White)
                     Spacer(Modifier.height(15.dp))
-                    OutlinedButton(onClick = { confirmRemove = true }) { Text("Remove from Folqio") }
+                    OutlinedButton(onClick = { if (confirmRemoval) confirmRemove = true else onRemove() }) { Text("Remove document") }
                 }
                 image == null -> CircularProgressIndicator(color = Mint)
                 else -> Image(

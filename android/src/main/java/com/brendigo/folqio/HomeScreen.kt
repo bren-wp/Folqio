@@ -14,7 +14,6 @@ import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.CallMerge
 import androidx.compose.material3.*
@@ -157,6 +156,10 @@ internal fun FolqioHome(
                 }
             }
 
+            if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth(), color = mint) }
+            if (error != null) item { Text(error, color = MaterialTheme.colorScheme.error) }
+            if (notice != null) item { Text(notice, color = mint) }
+
             if (tab == FolqioTab.SETTINGS) {
                 item {
                     FolqioSettingsScreen(
@@ -228,9 +231,7 @@ internal fun FolqioHome(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth(), color = mint) }
-                if (error != null) item { Text(error, color = MaterialTheme.colorScheme.error) }
-                if (notice != null) item { Text(notice, color = mint) }
+
                 if (filtered.isEmpty()) {
                     item {
                         Text(
