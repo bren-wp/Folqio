@@ -67,7 +67,11 @@ final class DocumentLibrary: ObservableObject {
         let item = DocumentItem(id: id, filename: filename, relativePath: relativePath,
                                 isFavorite: false, lastReadPage: 0)
         documents.insert(item, at: 0)
-        save()
+        guard save() else {
+            documents.removeAll { $0.id == id }
+            try? FileManager.default.removeItem(at: destination)
+            throw DocumentError.inaccessible
+        }
         return item
     }
 
@@ -93,7 +97,11 @@ final class DocumentLibrary: ObservableObject {
         let item = DocumentItem(id: id, filename: filename, relativePath: path,
                                 isFavorite: false, lastReadPage: 0)
         documents.insert(item, at: 0)
-        save()
+        guard save() else {
+            documents.removeAll { $0.id == id }
+            try? FileManager.default.removeItem(at: destination)
+            throw DocumentError.inaccessible
+        }
         return item
     }
 
@@ -104,38 +112,53 @@ final class DocumentLibrary: ObservableObject {
         guard !value.isEmpty, !value.contains("/"), !value.contains("\\"),
               !value.contains("\n"), !value.contains("\r"),
               let index = documents.firstIndex(where: { $0.id == item.id }) else { return false }
+        let previous = documents[index].filename
         documents[index].filename = Self.isPDFName(value) ? value : value + ".pdf"
-        save()
+        guard save() else {
+            documents[index].filename = previous
+            return false
+        }
         return true
     }
 
     func toggleFavorite(_ item: DocumentItem) {
         guard let index = documents.firstIndex(where: { $0.id == item.id }) else { return }
         documents[index].isFavorite.toggle()
-        save()
+        if !save() { documents[index].isFavorite.toggle() }
     }
 
     func recordPage(_ page: Int, in item: DocumentItem) {
         guard let index = documents.firstIndex(where: { $0.id == item.id }) else { return }
         guard documents[index].lastReadPage != page else { return }
+        let previous = documents[index].lastReadPage
         documents[index].lastReadPage = page
-        save()
+        if !save() { documents[index].lastReadPage = previous }
     }
 
     @discardableResult
     func remove(_ item: DocumentItem) -> Bool {
-        guard documents.contains(where: { $0.id == item.id }) else { return false }
-        let url = localURL(for: item)
-        // Never remove arbitrary paths from persisted metadata.
-        guard item.relativePath == item.id.uuidString + ".pdf" else { return false }
+        guard documents.contains(where: { $0.id == item.id }),
+              item.relativePath == item.id.uuidString + ".pdf" else { return false }
+
+        // Stage deletion with a same-directory rename. A failed metadata write can
+        // restore the file and the document record without losing its original bytes.
+        let original = localURL(for: item)
+        let pending = rootURL.appendingPathComponent(item.id.uuidString + ".pending-delete")
         do {
-            try FileManager.default.removeItem(at: url)
+            try FileManager.default.moveItem(at: original, to: pending)
         } catch {
-            // Keep the document in the library if deletion could not be completed.
             return false
         }
+        let previous = documents
         documents.removeAll { $0.id == item.id }
-        save()
+        guard save() else {
+            documents = previous
+            try? FileManager.default.moveItem(at: pending, to: original)
+            return false
+        }
+        // After metadata is durable, cleanup is best effort; the next launch can
+        // collect orphaned pending-delete files if the process was interrupted.
+        try? FileManager.default.removeItem(at: pending)
         return true
     }
 
@@ -143,13 +166,42 @@ final class DocumentLibrary: ObservableObject {
         let url = rootURL.appendingPathComponent("library.json")
         guard let data = try? Data(contentsOf: url),
               let saved = try? JSONDecoder().decode([DocumentItem].self, from: data) else { return }
-        documents = saved.filter { $0.relativePath == $0.id.uuidString + ".pdf" &&
-            FileManager.default.fileExists(atPath: localURL(for: $0).path) }
+        let valid = saved.filter { $0.relativePath == $0.id.uuidString + ".pdf" }
+        for item in valid {
+            let documentURL = localURL(for: item)
+            let pendingURL = rootURL.appendingPathComponent(item.id.uuidString + ".pending-delete")
+            if !FileManager.default.fileExists(atPath: documentURL.path),
+               FileManager.default.fileExists(atPath: pendingURL.path) {
+                try? FileManager.default.moveItem(at: pendingURL, to: documentURL)
+            }
+        }
+        documents = valid.filter {
+            FileManager.default.fileExists(atPath: localURL(for: $0).path)
+        }
+
+        // Remove only our validated UUID-named tombstones that have no library entry.
+        let referenced = Set(valid.map { $0.id.uuidString })
+        if let names = try? FileManager.default.contentsOfDirectory(atPath: rootURL.path) {
+            for name in names where name.hasSuffix(".pending-delete") {
+                let prefix = String(name.dropLast(".pending-delete".count))
+                guard UUID(uuidString: prefix) != nil,
+                      !referenced.contains(prefix) else { continue }
+                try? FileManager.default.removeItem(
+                    at: rootURL.appendingPathComponent(name)
+                )
+            }
+        }
     }
 
-    private func save() {
+    @discardableResult
+    private func save() -> Bool {
         let url = rootURL.appendingPathComponent("library.json")
-        guard let data = try? JSONEncoder().encode(documents) else { return }
-        try? data.write(to: url, options: [.atomic, .completeFileProtection])
+        do {
+            let data = try JSONEncoder().encode(documents)
+            try data.write(to: url, options: [.atomic, .completeFileProtection])
+            return true
+        } catch {
+            return false
+        }
     }
 }

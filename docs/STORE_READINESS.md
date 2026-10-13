@@ -35,3 +35,14 @@ This project is a **development preview**, not proof of approval from Google or 
 - [ ] No secrets in repo, workflows, logs or public releases
 
 Sources: https://support.google.com/googleplay/android-developer/answer/11926878 and https://developer.apple.com/news/upcoming-requirements/
+
+### Apple required-reason APIs checked in v0.1.6
+
+The app's `PrivacyInfo.xcprivacy` now declares:
+- `NSPrivacyAccessedAPICategoryUserDefaults` with `CA92.1`, to save Folqio-only language and reader preferences.
+- `NSPrivacyAccessedAPICategoryFileTimestamp` with `C617.1`, to identify old ZIP archives in Folqio's temporary app directory.
+
+The declarations follow Apple's approved-reason descriptions:
+https://developer.apple.com/documentation/bundleresources/app-privacy-configuration/nsprivacyaccessedapitypes/nsprivacyaccessedapitype
+
+The archive and complete privacy report must still be reviewed at actual App Store submission time.
