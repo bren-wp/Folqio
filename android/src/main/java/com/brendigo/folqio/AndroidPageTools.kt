@@ -3,7 +3,6 @@ package com.brendigo.folqio
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
@@ -13,7 +12,6 @@ import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
-import kotlin.math.min
 
 /**
  * PdfRenderer is read-only on Android 26+. These page-copy operations intentionally
