@@ -194,6 +194,8 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, o
     var exporting by remember(file.uri) { mutableStateOf(false) }
     var exportError by remember(file.uri) { mutableStateOf<String?>(null) }
 
+    var page by remember(file.uri) { mutableIntStateOf(0) }
+
     fun exportPage(rotate: Boolean) {
         scope.launch {
             exporting = true
@@ -210,7 +212,6 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, onBack: () -> Unit, o
         }
     }
 
-    var page by remember(file.uri) { mutableIntStateOf(0) }
     var count by remember(file.uri) { mutableIntStateOf(0) }
     var image by remember(file.uri) { mutableStateOf<android.graphics.Bitmap?>(null) }
     var error by remember(file.uri) { mutableStateOf<String?>(null) }
