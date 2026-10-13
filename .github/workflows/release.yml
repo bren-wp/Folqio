@@ -120,8 +120,22 @@ jobs:
           fi
           cp dist/android-debug.apk "dist/Folqio-$TAG-Android-debug.apk"
           cp dist/android-release.aab "dist/Folqio-$TAG-Android-UNSIGNED.aab"
+          NOTES_SOURCE="docs/releases/$VERSION.md"
+          NOTES_DEST="$RUNNER_TEMP/folqio-release-notes.md"
+          if [ -f "$NOTES_SOURCE" ]; then
+            cp "$NOTES_SOURCE" "$NOTES_DEST"
+          else
+            printf 'Folqio %s — development prerelease. Review the README and roadmap for supported features.\n' "$TAG" > "$NOTES_DEST"
+          fi
+          {
+            printf '\n---\n'
+            printf '%s\n' '**Download safety:** The APK is **debug-signed** and for testing only.'
+            printf '%s\n' 'The AAB is **UNSIGNED**, not ready for direct Play upload.'
+            printf '%s\n' 'The iOS app builds for simulator; a distribution IPA needs Apple signing and provisioning.'
+            printf '%s\n' 'This prerelease does not certify complete PDF editing or 1:1 physical-device UI parity.'
+          } >> "$NOTES_DEST"
           gh release create "$TAG" "dist/Folqio-$TAG-Android-debug.apk" "dist/Folqio-$TAG-Android-UNSIGNED.aab" \
             --target "$GITHUB_SHA" \
             --title "Folqio $TAG — development preview" \
             --prerelease \
-            --notes "Android APK: debug-signed, for development only. Android AAB: UNSIGNED, for manual signing; NOT accepted for Play upload as-is. iOS: source builds with Xcode 26; an IPA requires your Apple distribution identity and provisioning. No ad SDK, user accounts, analytics or cloud document upload. This is a development prerelease, not a claim of complete PDF editing or verified 1:1 device UI parity."
+            --notes-file "$NOTES_DEST"
