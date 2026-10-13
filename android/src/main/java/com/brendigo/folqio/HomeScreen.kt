@@ -171,8 +171,7 @@ internal fun FolqioHome(
                         shape = RoundedCornerShape(15.dp)) {
                         Row(Modifier.fillMaxWidth().padding(start = 14.dp, top = 8.dp,
                             end = 5.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Description, contentDescription = null,
-                                tint = mint, modifier = Modifier.size(27.dp))
+                            PdfThumbnail(file.uri)
                             Spacer(Modifier.width(12.dp))
                             Text(file.name, color = pearl, maxLines = 2,
                                 overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))

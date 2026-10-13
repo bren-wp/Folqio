@@ -146,9 +146,7 @@ struct HomeView: View {
                                 selectedDocument = document
                             } label: {
                                 HStack(spacing: 15) {
-                                    Image(systemName: "doc.text")
-                                        .font(.title2)
-                                        .foregroundStyle(FolqioColors.mint)
+                                    DocumentThumbnail(url: library.localURL(for: document))
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(document.filename)
                                             .fontWeight(.semibold)
