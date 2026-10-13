@@ -139,5 +139,10 @@ final class FolqioZipExporterTests: XCTestCase {
     func testSafeNamesCannotTraverseDirectories() {
         XCTAssertEqual(FolqioZipExporter.safeName("../report.pdf"), "report.pdf")
         XCTAssertEqual(FolqioZipExporter.safeName("report"), "report.pdf")
+        XCTAssertEqual(FolqioZipExporter.safeName("Statement.PDF"), "Statement.PDF")
+    }
+
+    func testExportRejectsEmptySelection() {
+        XCTAssertThrowsError(try FolqioZipExporter.export([]))
     }
 }

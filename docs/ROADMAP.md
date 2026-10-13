@@ -46,3 +46,11 @@
 - Select PDFs for ZIP export and save or share using operating-system interfaces.
 - Privacy policy, terms and Brendigo authorship included in the app.
 - ZIP file integrity, large inputs, and physical-device QA remain release gates.
+
+## v0.1.6 ZIP integrity and export hardening
+
+- Android: build ZIP in an app-private temporary file first, verify every entry and checksum, then copy to the selected destination; the staging file is always deleted.
+- Android: extract ZIP filename policy and streaming writer into a JVM-tested module. Test Unicode names, case-insensitive collisions, traversal and byte limits.
+- iOS: protect prepared archives with file protection, and clean up only Folqio-generated ZIP files older than one day during the next export session.
+- macOS CI: execute an actual Swift ZIP export and validate archive names and content with Python's ZIP parser.
+- A successful build/ZIP integrity smoke test is not a claim of full device testing or 1:1 visual parity.

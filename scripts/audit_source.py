@@ -36,7 +36,7 @@ if not (root / "android/src/main/res/mipmap-anydpi-v26/ic_launcher.xml").is_file
     issues.append("Android adaptive launcher icon missing")
 if not (root / "ios/Folqio/PrivacyInfo.xcprivacy").is_file():
     issues.append("Apple privacy manifest missing")
-if "MARKETING_VERSION: \"0.1.5\"" not in project or 'versionName = "0.1.5"' not in gradle:
+if "MARKETING_VERSION: \"0.1.6\"" not in project or 'versionName = "0.1.6"' not in gradle:
     issues.append("Platform versions are inconsistent")
 if issues:
     print("\n".join("AUDIT FAILED: " + issue for issue in issues), file=sys.stderr)

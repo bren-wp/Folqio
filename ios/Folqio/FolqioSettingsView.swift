@@ -166,6 +166,7 @@ private struct FolqioZipExportView: View {
             }
         }
         .tint(FolqioColors.mint)
+        .onAppear { FolqioZipExporter.purgeExpiredExports() }
     }
 
     private func exportSelected() {

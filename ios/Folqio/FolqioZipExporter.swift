@@ -19,6 +19,25 @@ enum ZipExportError: LocalizedError {
 enum FolqioZipExporter {
     static let maxFiles = 100
     static let maxBytes: UInt64 = 300 * 1024 * 1024
+    private static let exportPrefix = "Folqio-"
+
+    /// Remove only Folqio temporary ZIPs from previous sessions, never user exports.
+    /// A grace period protects files handed off through asynchronous share sheets.
+    static func purgeExpiredExports(olderThan age: TimeInterval = 24 * 60 * 60,
+                                   now: Date = Date()) {
+        let folder = FileManager.default.temporaryDirectory
+        guard let entries = try? FileManager.default.contentsOfDirectory(
+            at: folder, includingPropertiesForKeys: [.contentModificationDateKey, .isRegularFileKey]
+        ) else { return }
+        for url in entries where url.lastPathComponent.hasPrefix(exportPrefix)
+                              && url.pathExtension.lowercased() == "zip" {
+            guard let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .isRegularFileKey]),
+                  values.isRegularFile == true,
+                  let changed = values.contentModificationDate,
+                  now.timeIntervalSince(changed) > age else { continue }
+            try? FileManager.default.removeItem(at: url)
+        }
+    }
 
     static func safeName(_ input: String) -> String {
         let leaf = input.replacingOccurrences(of: "\\", with: "/")
@@ -62,7 +81,20 @@ enum FolqioZipExporter {
         guard (1...maxFiles).contains(files.count) else { throw ZipExportError.invalidSelection }
         let destination = FileManager.default.temporaryDirectory
             .appendingPathComponent("Folqio-\(UUID().uuidString).zip")
-        FileManager.default.createFile(atPath: destination.path, contents: nil)
+        guard FileManager.default.createFile(atPath: destination.path, contents: nil) else {
+            throw ZipExportError.unreadableFile
+        }
+        #if os(iOS)
+        do {
+            try FileManager.default.setAttributes(
+                [.protectionKey: FileProtectionType.completeUnlessOpen],
+                ofItemAtPath: destination.path
+            )
+        } catch {
+            try? FileManager.default.removeItem(at: destination)
+            throw error
+        }
+        #endif
         let archive = try FileHandle(forWritingTo: destination)
         var succeeded = false
         defer {

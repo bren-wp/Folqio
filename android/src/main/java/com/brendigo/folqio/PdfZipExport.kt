@@ -2,65 +2,62 @@ package com.brendigo.folqio
 
 import android.content.Context
 import android.net.Uri
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.IOException
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
+import java.util.zip.ZipInputStream
 
 /**
- * User-initiated export to a SAF destination. No broad-storage or network permissions.
- * Export only read-granted content:// PDFs, never arbitrary file:// paths.
+ * Build and validate the complete archive in app-private cache before writing to a
+ * user-selected SAF destination. Source failures cannot leave a half-written export.
  */
 object PdfZipExport {
-    const val MAX_FILES = 100
-    const val MAX_BYTES = 300L * 1024 * 1024
+    const val MAX_FILES = ZipArchiveWriter.MAX_FILES
+    const val MAX_BYTES = ZipArchiveWriter.MAX_BYTES
 
-    fun sanitizedName(value: String): String {
-        val name = value.substringAfterLast('/').substringAfterLast('\\')
-            .replace(Regex("[^\\p{L}\\p{N}. _()-]"), "_")
-            .trim().trim('.').take(100)
-        val safe = name.ifBlank { "Document" }
-        return if (safe.endsWith(".pdf", ignoreCase = true)) safe else "$safe.pdf"
-    }
+    fun sanitizedName(value: String): String = ZipArchiveWriter.sanitizedName(value)
 
     fun export(context: Context, selected: List<LocalPdf>, destination: Uri): Int {
-        require(selected.isNotEmpty() && selected.size <= MAX_FILES) { "Select 1–100 PDF documents." }
-        require(destination.scheme == "content") { "Choose a location using the file picker." }
-
+        require(selected.size in 1..MAX_FILES) { "Choose between 1 and 100 PDFs." }
+        require(destination.scheme == "content") { "Choose a destination using the file picker." }
         val resolver = context.contentResolver
-        val names = mutableSetOf<String>()
-        var bytesTotal = 0L
-        var completed = 0
-        val output = resolver.openOutputStream(destination, "wt") ?: throw IOException("Cannot create ZIP archive.")
-        output.use { raw ->
-            ZipOutputStream(raw.buffered()).use { archive ->
-                for (document in selected) {
-                    val uri = Uri.parse(document.uri)
-                    require(uri.scheme == "content") { "Only selected PDF sources can be exported." }
-                    val base = sanitizedName(document.name)
-                    var name = base
-                    var suffix = 2
-                    while (!names.add(name.lowercase(java.util.Locale.ROOT))) {
-                        name = base.removeSuffix(".pdf").take(85) + " ($suffix).pdf"
-                        suffix++
-                    }
-                    val input = resolver.openInputStream(uri)
-                        ?: throw IOException("Cannot open ${document.name}.")
-                    input.use {
-                        archive.putNextEntry(ZipEntry(name))
-                        val buffer = ByteArray(65536)
-                        while (true) {
-                            val read = it.read(buffer)
-                            if (read < 0) break
-                            bytesTotal += read
-                            if (bytesTotal > MAX_BYTES) throw IOException("ZIP export exceeds 300 MB.")
-                            archive.write(buffer, 0, read)
-                        }
-                        archive.closeEntry()
-                    }
-                    completed++
-                }
+        val sources = selected.map { document ->
+            val uri = Uri.parse(document.uri)
+            require(uri.scheme == "content") { "Only PDF documents from the file picker can be exported." }
+            ZipArchiveWriter.Source(document.name) {
+                resolver.openInputStream(uri)
+                    ?: throw IOException("Could not open ${document.name}.")
             }
         }
-        return completed
+        val temporary = File.createTempFile("folqio-archive-", ".zip", context.cacheDir)
+        try {
+            val count = FileOutputStream(temporary).use { output ->
+                ZipArchiveWriter.write(sources, output)
+            }
+
+            // Read entries through the ZIP decoder, which verifies each file's CRC.
+            var checked = 0
+            ZipInputStream(FileInputStream(temporary).buffered()).use { zip ->
+                val buffer = ByteArray(65536)
+                while (true) {
+                    val entry = zip.nextEntry ?: break
+                    if (entry.isDirectory) throw IOException("Unexpected ZIP directory.")
+                    while (zip.read(buffer) != -1) { /* verify stream */ }
+                    zip.closeEntry()
+                    checked++
+                }
+            }
+            if (checked != count) throw IOException("ZIP verification failed.")
+
+            val output = resolver.openOutputStream(destination, "wt")
+                ?: throw IOException("Could not create the ZIP at the selected destination.")
+            output.use { stream ->
+                FileInputStream(temporary).use { it.copyTo(stream, 65536) }
+            }
+            return count
+        } finally {
+            temporary.delete()
+        }
     }
 }
