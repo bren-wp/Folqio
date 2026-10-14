@@ -119,6 +119,8 @@ private fun FolqioApp(initialUri: Uri?) {
                 recent = library.recent()
                 current = pdf
                 importError = null
+            } catch (cancelled: CancellationException) {
+                throw cancelled
             } catch (failure: Exception) {
                 importError = "Cannot create PDF: ${failure.localizedMessage ?: "invalid image"}"
             } finally {
@@ -346,6 +348,8 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, reopenLastPage: Boole
                     AndroidPageTools.copyPage(context.applicationContext, Uri.parse(file.uri), page, rotate)
                 }
                 onCreated(created)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
             } catch (failure: Exception) {
                 exportError = failure.localizedMessage ?: "Cannot export this page."
             } finally {
