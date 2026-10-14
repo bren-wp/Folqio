@@ -54,7 +54,7 @@ Both editions share Folqio's visual identity but use the strengths of their resp
 
 **Android** brings a focused PDF reader, bookmarks, document library, photo-to-PDF creation, save/share, and page extraction, rotation, and merging as flattened copies.
 
-**iPhone and iPad** add PDFKit text search, free-text overlays, notes, and highlights saved to independent copies, multi-page document-camera scanning, on-device OCR, and page operations that retain PDF content.
+**iPhone and iPad** add PDFKit text search, free-text overlays, notes, and highlights saved to independent copies, multi-page document-camera scanning, on-device OCR, and page operations that retain PDF content without mutating loaded source documents. The photo picker decodes large images at bounded resolution to reduce memory pressure.
 
 **Please note:** Android's extracted, rotated, and merged PDF copies are rasterized. Those operations do not preserve searchable text, forms, or signatures and must not be treated as secure redaction. Text overlays are PDF annotations, not replacement of pre-existing PDF text; editing a signed PDF may invalidate signatures on the resulting copy. Some advanced PDF editing features remain on the roadmap.
 

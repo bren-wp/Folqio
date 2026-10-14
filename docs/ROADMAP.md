@@ -72,3 +72,10 @@
 - UI polish for compact iPhones and translated Android quick actions/settings; targeted removal of a duplicate ZIP facade and its redundant tests.
 - Whole-repository source audit reports advisory unused declarations/imports for careful manual review; no speculative deletion of referenced code.
 - Outstanding: functional parity for existing PDF text editing, Android OCR, large-document profiling, full localization, real-device 1:1 screenshot comparisons, release signing and App Store/Play Console verification.
+
+## v0.1.10 reliability pass
+- PDFKit source objects are no longer mutated by iOS rotate, reorder, delete, merge or extract. Each operation validates and edits a separate PDF copy.
+- Password-encrypted PDFs are rejected for operations that cannot preserve encryption; originals stay intact.
+- iOS photo picker decodes bounded, EXIF-correct ImageIO thumbnails rather than allocating full-resolution originals before PDF creation.
+- Native tests check page-source isolation, corrupted photo data and photo dimension bounds.
+- Outstanding: true replacement of existing PDF text and lossless Android page editing; real-device visual, memory and accessibility qualification; signed store packages; full translation coverage.
