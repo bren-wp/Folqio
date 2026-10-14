@@ -95,7 +95,14 @@ enum FolqioZipExporter {
             throw error
         }
         #endif
-        let archive = try FileHandle(forWritingTo: destination)
+        let archive: FileHandle
+        do {
+            archive = try FileHandle(forWritingTo: destination)
+        } catch {
+            // An unwritable temporary archive must never linger with a ZIP name.
+            try? FileManager.default.removeItem(at: destination)
+            throw error
+        }
         var succeeded = false
         defer {
             try? archive.close()
