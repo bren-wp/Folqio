@@ -62,3 +62,13 @@
 - Regression tests check PDF annotation isolation, persistence, and unchanged source bytes.
 - Both settings pages show the installed Folqio version. Android/iOS build numbers are aligned and the source audit validates version consistency rather than comparing against an obsolete fixed version.
 - Still pending: replacing pre-existing PDF text, Android lossless annotation parity, cryptographic signature preservation, broad physical-device testing, and signed store builds.
+
+## v0.1.9 hardening follow-up
+
+- iOS atomic PDF import staging with post-copy size validation and XCTest proving original file retention.
+- Android PDF merge rejects known oversized SAF file descriptors before rasterization and tests its size policy.
+- Android cancellation propagation, graceful unavailable-share handling, failed-camera cleanup.
+- iOS ZIP output creation cleanup on failed file-handle acquisition.
+- UI polish for compact iPhones and translated Android quick actions/settings; targeted removal of a duplicate ZIP facade and its redundant tests.
+- Whole-repository source audit reports advisory unused declarations/imports for careful manual review; no speculative deletion of referenced code.
+- Outstanding: functional parity for existing PDF text editing, Android OCR, large-document profiling, full localization, real-device 1:1 screenshot comparisons, release signing and App Store/Play Console verification.
