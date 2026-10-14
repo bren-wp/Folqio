@@ -155,49 +155,49 @@ struct HomeView: View {
                         // creating PDFKit thumbnails for an entire large library.
                         LazyVStack(spacing: 10) {
                             ForEach(filtered) { document in
-                            Button {
-                                selectedDocument = document
-                            } label: {
-                                HStack(spacing: 15) {
-                                    DocumentThumbnail(url: library.localURL(for: document))
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(document.filename)
-                                            .fontWeight(.semibold)
-                                            .foregroundStyle(FolqioColors.pearl)
-                                            .lineLimit(2)
-                                        Text("Local PDF")
-                                            .font(.caption)
+                                Button {
+                                    selectedDocument = document
+                                } label: {
+                                    HStack(spacing: 15) {
+                                        DocumentThumbnail(url: library.localURL(for: document))
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(document.filename)
+                                                .fontWeight(.semibold)
+                                                .foregroundStyle(FolqioColors.pearl)
+                                                .lineLimit(2)
+                                            Text("Local PDF")
+                                                .font(.caption)
+                                                .foregroundStyle(FolqioColors.muted)
+                                        }
+                                        Spacer()
+                                        if document.isFavorite {
+                                            Image(systemName: "star.fill")
+                                                .foregroundStyle(FolqioColors.mint)
+                                        }
+                                        Image(systemName: "chevron.right")
                                             .foregroundStyle(FolqioColors.muted)
                                     }
-                                    Spacer()
-                                    if document.isFavorite {
-                                        Image(systemName: "star.fill")
-                                            .foregroundStyle(FolqioColors.mint)
+                                    .padding(16)
+                                    .background(FolqioColors.slate, in: RoundedRectangle(cornerRadius: 15))
+                                }
+                                .contextMenu {
+                                    Button("Rename label", systemImage: "pencil") { renameItem = document }
+                                    Button(document.isFavorite ? "Remove favorite" : "Add favorite",
+                                           systemImage: document.isFavorite ? "star.slash" : "star") {
+                                        library.toggleFavorite(document)
                                     }
-                                    Image(systemName: "chevron.right")
-                                        .foregroundStyle(FolqioColors.muted)
-                                }
-                                .padding(16)
-                                .background(FolqioColors.slate, in: RoundedRectangle(cornerRadius: 15))
-                            }
-                            .contextMenu {
-                                Button("Rename label", systemImage: "pencil") { renameItem = document }
-                                Button(document.isFavorite ? "Remove favorite" : "Add favorite",
-                                       systemImage: document.isFavorite ? "star.slash" : "star") {
-                                    library.toggleFavorite(document)
-                                }
-                                ShareLink(item: library.localURL(for: document)) {
-                                    Label("Share copy", systemImage: "square.and.arrow.up")
-                                }
-                                Button("Remove document", systemImage: "trash", role: .destructive) {
-                                    if confirmDeletion {
-                                        pendingRemoval = document
-                                    } else if !library.remove(document) {
-                                        importError = "The document could not be removed."
+                                    ShareLink(item: library.localURL(for: document)) {
+                                        Label("Share copy", systemImage: "square.and.arrow.up")
+                                    }
+                                    Button("Remove document", systemImage: "trash", role: .destructive) {
+                                        if confirmDeletion {
+                                            pendingRemoval = document
+                                        } else if !library.remove(document) {
+                                            importError = "The document could not be removed."
+                                        }
                                     }
                                 }
                             }
-                                                    }
                         }
                         Text("ON-DEVICE  ·  NO ACCOUNT  ·  PRIVATE BY DESIGN")
                             .font(.caption2.weight(.medium))
