@@ -159,6 +159,47 @@ final class DocumentToolsTests: XCTestCase {
         XCTAssertEqual(moved.pageCount, 3)
     }
 
+    func testPageMutationsReturnCopiesAndKeepInputPagesUnchanged() throws {
+        let source = makePDF(pages: 3)
+        let sourcePages = (0..<source.pageCount).compactMap { source.page(at: $0) }
+        let deleted = try DocumentTools.deletedCopy(source, index: 1)
+        XCTAssertEqual(deleted.pageCount, 2)
+        XCTAssertEqual(source.pageCount, 3)
+
+        let rotated = try DocumentTools.rotatedCopy(source, index: 0)
+        XCTAssertEqual(rotated.page(at: 0)?.rotation, 90)
+        XCTAssertEqual(source.page(at: 0)?.rotation, 0)
+
+        let moved = try DocumentTools.movedCopy(source, from: 0, to: 2)
+        XCTAssertEqual(moved.pageCount, 3)
+        XCTAssertEqual(source.pageCount, 3)
+        for (index, originalPage) in sourcePages.enumerated() {
+            XCTAssertTrue(source.page(at: index) === originalPage,
+                          "Source page order changed at index \\(index)")
+        }
+    }
+
+    func testMergeAndExtractRetainCallerPDFPages() throws {
+        let first = makePDF(pages: 2)
+        let second = makePDF(pages: 3)
+        let firstPages = (0..<2).compactMap { first.page(at: $0) }
+        let secondPages = (0..<3).compactMap { second.page(at: $0) }
+        let merged = try DocumentTools.merge([first, second])
+        XCTAssertEqual(merged.pageCount, 5)
+        XCTAssertEqual(first.pageCount, 2)
+        XCTAssertEqual(second.pageCount, 3)
+
+        let extracted = try DocumentTools.extract(first, indices: [1])
+        XCTAssertEqual(extracted.pageCount, 1)
+        XCTAssertEqual(first.pageCount, 2)
+        for (index, page) in firstPages.enumerated() {
+            XCTAssertTrue(first.page(at: index) === page)
+        }
+        for (index, page) in secondPages.enumerated() {
+            XCTAssertTrue(second.page(at: index) === page)
+        }
+    }
+
     func testAnnotationCreatesIndependentPDFWithoutChangingSource() throws {
         let original = makePDF(pages: 2)
         let annotation = PDFAnnotation(bounds: CGRect(x: 10, y: 20, width: 80, height: 35),
