@@ -89,7 +89,7 @@ struct HomeView: View {
                             Text("Quick actions")
                                 .font(.title3.bold())
                                 .foregroundStyle(FolqioColors.pearl)
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 10) {
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 74), spacing: 10)], spacing: 10) {
                                 Button { isImporterPresented = true } label: {
                                     QuickAction(title: tr("open"), symbol: "folder")
                                 }
