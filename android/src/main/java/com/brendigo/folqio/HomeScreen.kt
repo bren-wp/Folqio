@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 
@@ -292,7 +293,11 @@ private fun QuickAction(label: String, icon: androidx.compose.ui.graphics.vector
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Icon(icon, contentDescription = null, tint = FolqioPalette.mint, modifier = Modifier.size(25.dp))
-            Text(label, color = FolqioPalette.pearl, style = MaterialTheme.typography.labelLarge)
+            Text(label, color = FolqioPalette.pearl,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 2, overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp))
         }
     }
 }
