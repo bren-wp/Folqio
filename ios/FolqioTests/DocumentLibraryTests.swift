@@ -261,6 +261,27 @@ final class PhotoPDFBuilderTests: XCTestCase {
         XCTAssertFalse(PhotoPDFBuilder.isValidPhotoCount(11))
     }
 
+    func testImageIODecodeRejectsCorruptAndOversizedPhotos() throws {
+        XCTAssertThrowsError(try PhotoPDFBuilder.decodeBoundedImage(Data("not-image".utf8)))
+        XCTAssertThrowsError(try PhotoPDFBuilder.decodeBoundedImage(
+            Data(count: PhotoPDFBuilder.maximumBytesPerPhoto + 1)
+        ))
+    }
+
+    func testImageIODecodeLimitsLargePhotoDimensions() throws {
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 2800, height: 900))
+        let original = renderer.image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 2800, height: 900))
+        }
+        let jpeg = try XCTUnwrap(original.jpegData(compressionQuality: 0.7))
+        let bounded = try PhotoPDFBuilder.decodeBoundedImage(jpeg)
+        let thumbnail = try XCTUnwrap(bounded.cgImage)
+        XCTAssertLessThanOrEqual(max(thumbnail.width, thumbnail.height), 2200)
+        XCTAssertGreaterThan(thumbnail.width, 0)
+        XCTAssertGreaterThan(thumbnail.height, 0)
+    }
+
     func testPhotoBuilderAppendsPagesLocally() throws {
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: 220, height: 320))
         let image = renderer.image { context in
