@@ -1,6 +1,7 @@
 import Foundation
 import PDFKit
 import UIKit
+import ImageIO
 
 enum PhotoPDFError: LocalizedError {
     case invalidSelection
@@ -20,6 +21,25 @@ enum PhotoPDFBuilder {
 
     static func isValidPhotoCount(_ count: Int) -> Bool {
         (1...maximumPhotos).contains(count)
+    }
+
+    /// Decode only a bounded thumbnail instead of materializing a huge original
+    /// camera image in memory. ImageIO also applies the photo's EXIF orientation.
+    static func decodeBoundedImage(_ data: Data) throws -> UIImage {
+        guard !data.isEmpty, data.count <= maximumBytesPerPhoto,
+              let source = CGImageSourceCreateWithData(
+                data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary
+              ),
+              let thumbnail = CGImageSourceCreateThumbnailAtIndex(
+                source, 0, [
+                    kCGImageSourceCreateThumbnailFromImageAlways: true,
+                    kCGImageSourceCreateThumbnailWithTransform: true,
+                    kCGImageSourceThumbnailMaxPixelSize: 2200,
+                    kCGImageSourceShouldCacheImmediately: true
+                ] as CFDictionary
+              )
+        else { throw PhotoPDFError.unreadableImage }
+        return UIImage(cgImage: thumbnail)
     }
 
     static func appendImage(_ image: UIImage, to document: PDFDocument) throws {
