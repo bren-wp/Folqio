@@ -244,6 +244,10 @@ private fun FolqioApp(initialUri: Uri?) {
                             pendingCapture = uri.toString()
                             camera.launch(uri)
                         } catch (failure: Exception) {
+                            pendingCapture?.let { stored ->
+                                PhotoPdfTools.discardCapture(context, Uri.parse(stored))
+                            }
+                            pendingCapture = null
                             importError = failure.localizedMessage ?: "Cannot open camera."
                         }
                     },
@@ -413,7 +417,11 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, reopenLastPage: Boole
                     putExtra(Intent.EXTRA_STREAM, Uri.parse(file.uri))
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                context.startActivity(Intent.createChooser(share, "Share PDF"))
+                try {
+                    context.startActivity(Intent.createChooser(share, "Share PDF"))
+                } catch (failure: Exception) {
+                    saveInfo = "Sharing is unavailable on this device."
+                }
             }) { Icon(Icons.Default.IosShare, "Share PDF", tint = FolqioPalette.pearl) }
         }
         Box(Modifier.fillMaxWidth().weight(1f).background(Color(0xFF101C2B)), contentAlignment = Alignment.Center) {
