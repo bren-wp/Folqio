@@ -175,7 +175,7 @@ final class DocumentToolsTests: XCTestCase {
         XCTAssertEqual(source.pageCount, 3)
         for (index, originalPage) in sourcePages.enumerated() {
             XCTAssertTrue(source.page(at: index) === originalPage,
-                          "Source page order changed at index \\(index)")
+                          "Source page order changed at index \(index)")
         }
     }
 
