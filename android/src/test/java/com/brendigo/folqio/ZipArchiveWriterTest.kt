@@ -47,6 +47,8 @@ class ZipArchiveWriterTest {
 
     @Test fun rejectsEmptySelectionAndUnsafeNames() {
         assertEquals("report.pdf", ZipArchiveWriter.sanitizedName("../../report.pdf"))
+        assertEquals("Report 2026.pdf", ZipArchiveWriter.sanitizedName("Report 2026"))
+        assertEquals("statement.pdf", ZipArchiveWriter.sanitizedName("statement.pdf"))
         assertEquals("Document.pdf", ZipArchiveWriter.sanitizedName("..."))
         assertFalse(ZipArchiveWriter.sanitizedName("../..\\private").contains("/"))
         try {
