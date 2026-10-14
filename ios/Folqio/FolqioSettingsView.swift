@@ -68,7 +68,8 @@ struct FolqioSettingsView: View {
                     HStack {
                         Text("Folqio")
                         Spacer()
-                        Text("© 2026 Brendigo").foregroundStyle(FolqioColors.muted)
+                        Text("v\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—") · © 2026 Brendigo")
+                            .foregroundStyle(FolqioColors.muted)
                     }
                 }
             }

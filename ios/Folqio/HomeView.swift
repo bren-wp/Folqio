@@ -89,7 +89,7 @@ struct HomeView: View {
                             Text("Quick actions")
                                 .font(.title3.bold())
                                 .foregroundStyle(FolqioColors.pearl)
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 10) {
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 74), spacing: 10)], spacing: 10) {
                                 Button { isImporterPresented = true } label: {
                                     QuickAction(title: tr("open"), symbol: "folder")
                                 }
@@ -151,51 +151,55 @@ struct HomeView: View {
                                 .foregroundStyle(FolqioColors.muted)
                                 .padding(.vertical, 24)
                         }
-                        ForEach(filtered) { document in
-                            Button {
-                                selectedDocument = document
-                            } label: {
-                                HStack(spacing: 15) {
-                                    DocumentThumbnail(url: library.localURL(for: document))
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(document.filename)
-                                            .fontWeight(.semibold)
-                                            .foregroundStyle(FolqioColors.pearl)
-                                            .lineLimit(2)
-                                        Text("Local PDF")
-                                            .font(.caption)
+                        // Build visible document rows on demand to avoid eagerly
+                        // creating PDFKit thumbnails for an entire large library.
+                        LazyVStack(spacing: 10) {
+                            ForEach(filtered) { document in
+                                Button {
+                                    selectedDocument = document
+                                } label: {
+                                    HStack(spacing: 15) {
+                                        DocumentThumbnail(url: library.localURL(for: document))
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(document.filename)
+                                                .fontWeight(.semibold)
+                                                .foregroundStyle(FolqioColors.pearl)
+                                                .lineLimit(2)
+                                            Text("Local PDF")
+                                                .font(.caption)
+                                                .foregroundStyle(FolqioColors.muted)
+                                        }
+                                        Spacer()
+                                        if document.isFavorite {
+                                            Image(systemName: "star.fill")
+                                                .foregroundStyle(FolqioColors.mint)
+                                        }
+                                        Image(systemName: "chevron.right")
                                             .foregroundStyle(FolqioColors.muted)
                                     }
-                                    Spacer()
-                                    if document.isFavorite {
-                                        Image(systemName: "star.fill")
-                                            .foregroundStyle(FolqioColors.mint)
+                                    .padding(16)
+                                    .background(FolqioColors.slate, in: RoundedRectangle(cornerRadius: 15))
+                                }
+                                .contextMenu {
+                                    Button("Rename label", systemImage: "pencil") { renameItem = document }
+                                    Button(document.isFavorite ? "Remove favorite" : "Add favorite",
+                                           systemImage: document.isFavorite ? "star.slash" : "star") {
+                                        library.toggleFavorite(document)
                                     }
-                                    Image(systemName: "chevron.right")
-                                        .foregroundStyle(FolqioColors.muted)
-                                }
-                                .padding(16)
-                                .background(FolqioColors.slate, in: RoundedRectangle(cornerRadius: 15))
-                            }
-                            .contextMenu {
-                                Button("Rename label", systemImage: "pencil") { renameItem = document }
-                                Button(document.isFavorite ? "Remove favorite" : "Add favorite",
-                                       systemImage: document.isFavorite ? "star.slash" : "star") {
-                                    library.toggleFavorite(document)
-                                }
-                                ShareLink(item: library.localURL(for: document)) {
-                                    Label("Share copy", systemImage: "square.and.arrow.up")
-                                }
-                                Button("Remove document", systemImage: "trash", role: .destructive) {
-                                    if confirmDeletion {
-                                        pendingRemoval = document
-                                    } else if !library.remove(document) {
-                                        importError = "The document could not be removed."
+                                    ShareLink(item: library.localURL(for: document)) {
+                                        Label("Share copy", systemImage: "square.and.arrow.up")
+                                    }
+                                    Button("Remove document", systemImage: "trash", role: .destructive) {
+                                        if confirmDeletion {
+                                            pendingRemoval = document
+                                        } else if !library.remove(document) {
+                                            importError = "The document could not be removed."
+                                        }
                                     }
                                 }
                             }
                         }
-                        Text("PRIVATE  ·  OFFLINE-FIRST  ·  SECURE")
+                        Text("ON-DEVICE  ·  NO ACCOUNT  ·  PRIVATE BY DESIGN")
                             .font(.caption2.weight(.medium))
                             .tracking(1)
                             .foregroundStyle(FolqioColors.muted)
@@ -358,6 +362,8 @@ private struct BottomNavigationItem: View {
                     .font(.system(size: 19))
                 Text(title)
                     .font(.system(size: 10, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
             }
             .foregroundStyle(active ? FolqioColors.mint : FolqioColors.muted)
             .frame(maxWidth: .infinity)

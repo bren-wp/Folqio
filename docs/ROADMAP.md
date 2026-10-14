@@ -54,3 +54,21 @@
 - iOS: protect prepared archives with file protection, and clean up only Folqio-generated ZIP files older than one day during the next export session.
 - macOS CI: execute an actual Swift ZIP export and validate archive names and content with Python's ZIP parser.
 - A successful build/ZIP integrity smoke test is not a claim of full device testing or 1:1 visual parity.
+
+## v0.1.9 — annotation safety and clarity
+
+- iOS notes and highlights now create a separate library document instead of writing over the original PDF. The new copy is saved via the protected library writer.
+- iOS offers a free-text annotation overlay on the current page, explicitly differentiated from editing pre-existing PDF text.
+- Regression tests check PDF annotation isolation, persistence, and unchanged source bytes.
+- Both settings pages show the installed Folqio version. Android/iOS build numbers are aligned and the source audit validates version consistency rather than comparing against an obsolete fixed version.
+- Still pending: replacing pre-existing PDF text, Android lossless annotation parity, cryptographic signature preservation, broad physical-device testing, and signed store builds.
+
+## v0.1.9 hardening follow-up
+
+- iOS atomic PDF import staging with post-copy size validation and XCTest proving original file retention.
+- Android PDF merge rejects known oversized SAF file descriptors before rasterization and tests its size policy.
+- Android cancellation propagation, graceful unavailable-share handling, failed-camera cleanup.
+- iOS ZIP output creation cleanup on failed file-handle acquisition.
+- UI polish for compact iPhones and translated Android quick actions/settings; targeted removal of a duplicate ZIP facade and its redundant tests.
+- Whole-repository source audit reports advisory unused declarations/imports for careful manual review; no speculative deletion of referenced code.
+- Outstanding: functional parity for existing PDF text editing, Android OCR, large-document profiling, full localization, real-device 1:1 screenshot comparisons, release signing and App Store/Play Console verification.

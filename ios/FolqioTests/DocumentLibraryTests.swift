@@ -22,6 +22,31 @@ final class DocumentLibraryTests: XCTestCase {
         XCTAssertFalse(library.renameLabel(unknown, requestedName: "../invalid"))
     }
 
+    func testImportedPDFKeepsOriginalAndCommitsOneProtectedLocalCopy() throws {
+        let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let source = base.appendingPathComponent("source.pdf")
+        let pdf = PDFDocument()
+        let picture = UIGraphicsImageRenderer(size: CGSize(width: 60, height: 80))
+            .image { ctx in UIColor.white.setFill(); ctx.fill(CGRect(x: 0, y: 0, width: 60, height: 80)) }
+        pdf.insert(try XCTUnwrap(PDFPage(image: picture)), at: 0)
+        XCTAssertTrue(pdf.write(to: source))
+        let original = try Data(contentsOf: source)
+        let storage = base.appendingPathComponent("app")
+        let library = DocumentLibrary(rootURL: storage)
+        let imported = try library.importPDF(from: source)
+        XCTAssertEqual(imported.filename, "source.pdf")
+        XCTAssertNotEqual(library.localURL(for: imported), source)
+        XCTAssertEqual(try Data(contentsOf: source), original)
+        XCTAssertEqual(try Data(contentsOf: library.localURL(for: imported)), original)
+        XCTAssertEqual(library.documents.count, 1)
+        let leftover = try FileManager.default.contentsOfDirectory(atPath: storage.path)
+        XCTAssertFalse(leftover.contains(where: { $0.hasSuffix(".part") }))
+        XCTAssertTrue(library.remove(imported))
+        XCTAssertEqual(try Data(contentsOf: source), original)
+    }
+
     func testRejectsOversizedDocumentBeforeParsing() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -132,6 +157,57 @@ final class DocumentToolsTests: XCTestCase {
         XCTAssertEqual(rotated.page(at: 0)?.rotation, 90)
         let moved = try DocumentTools.movedCopy(rotated, from: 0, to: 2)
         XCTAssertEqual(moved.pageCount, 3)
+    }
+
+    func testAnnotationCreatesIndependentPDFWithoutChangingSource() throws {
+        let original = makePDF(pages: 2)
+        let annotation = PDFAnnotation(bounds: CGRect(x: 10, y: 20, width: 80, height: 35),
+                                       forType: .freeText, withProperties: nil)
+        annotation.contents = "Approved"
+        let edited = try DocumentTools.annotatedCopy(original, index: 1, annotation: annotation)
+
+        XCTAssertEqual(original.page(at: 1)?.annotations.count, 0)
+        XCTAssertEqual(edited.page(at: 1)?.annotations.count, 1)
+        XCTAssertEqual(edited.page(at: 1)?.annotations.first?.contents, "Approved")
+        XCTAssertEqual(edited.pageCount, 2)
+        XCTAssertThrowsError(try DocumentTools.annotatedCopy(original, index: 2,
+                                                              annotation: annotation))
+    }
+
+    func testAnnotatedCopyPersistedSeparatelyWithOriginalBytesUnchanged() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = DocumentLibrary(rootURL: root)
+        let original = try library.createPDF(makePDF(pages: 1), named: "Original.pdf")
+        let originalURL = library.localURL(for: original)
+        let originalBytes = try Data(contentsOf: originalURL)
+        let source = try XCTUnwrap(PDFDocument(url: originalURL))
+        let annotation = PDFAnnotation(bounds: CGRect(x: 10, y: 10, width: 20, height: 20),
+                                       forType: .text, withProperties: nil)
+        annotation.contents = "Private note"
+
+        let edited = try DocumentTools.annotatedCopy(source, index: 0, annotation: annotation)
+        let saved = try library.createPDF(edited, named: "Note - Original.pdf")
+        let savedPDF = try XCTUnwrap(PDFDocument(url: library.localURL(for: saved)))
+        XCTAssertNotEqual(saved.id, original.id)
+        XCTAssertEqual(try Data(contentsOf: originalURL), originalBytes)
+        XCTAssertEqual(PDFDocument(url: originalURL)?.page(at: 0)?.annotations.count, 0)
+        // PDFKit can persist a note together with its associated Popup annotation.
+        // Verify the meaningful note count instead of rejecting the companion popup.
+        let annotations = try XCTUnwrap(savedPDF.page(at: 0)?.annotations)
+        let noteType = PDFAnnotationSubtype.text.rawValue
+        let popupType = PDFAnnotationSubtype.popup.rawValue
+        // PDFKit stores annotation.type as "Text", while subtype raw values may be "/Text".
+        func normalized(_ value: String?) -> String? {
+            value?.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        }
+        let notes = annotations.filter { normalized($0.type) == normalized(noteType) }
+        XCTAssertEqual(notes.count, 1, "Unexpected PDF annotations: \(annotations.map { $0.type ?? "nil" })")
+        XCTAssertEqual(notes.first?.contents, "Private note")
+        XCTAssertTrue(annotations.allSatisfy {
+            normalized($0.type) == normalized(noteType) || normalized($0.type) == normalized(popupType)
+        },
+                      "Unexpected additional annotation types: \(annotations.map { $0.type ?? "nil" })")
     }
 }
 

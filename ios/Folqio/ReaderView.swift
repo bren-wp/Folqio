@@ -1,6 +1,14 @@
 import SwiftUI
 import PDFKit
 
+private enum AnnotationEditor: String, Identifiable {
+    case note
+    case text
+
+    var id: String { rawValue }
+    var title: String { self == .note ? "Add a note" : "Add a text overlay" }
+}
+
 struct ReaderView: View {
     @EnvironmentObject private var library: DocumentLibrary
     @Environment(\.dismiss) private var dismiss
@@ -15,8 +23,8 @@ struct ReaderView: View {
     @State private var showingPages = false
     @State private var showingPassword = false
     @State private var unlockGeneration = 0
-    @State private var showingNote = false
-    @State private var noteText = ""
+    @State private var annotationEditor: AnnotationEditor?
+    @State private var annotationText = ""
     @State private var message: String?
     @State private var recognizing = false
     @State private var ocrProgress: String?
@@ -31,12 +39,35 @@ struct ReaderView: View {
             .onChange(of: currentPageIndex) { page in
                 library.recordPage(page, in: item)
             }
-            .alert("Add a PDF note", isPresented: $showingNote) {
-                TextField("Note text", text: $noteText)
-                Button("Cancel", role: .cancel) { noteText = "" }
-                Button("Save", action: saveNote)
-            } message: {
-                Text("Adds a note annotation to the current page.")
+            .sheet(item: $annotationEditor) { editor in
+                NavigationStack {
+                    Form {
+                        Section {
+                            TextField("Enter text", text: $annotationText, axis: .vertical)
+                                .lineLimit(3...8)
+                        } footer: {
+                            Text("An editable PDF annotation is added to a new document copy. Existing PDF text is not replaced, and signatures in edited copies may no longer validate.")
+                        }
+                    }
+                    .navigationTitle(editor.title)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") {
+                                annotationText = ""
+                                annotationEditor = nil
+                            }
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Save copy") {
+                                if editor == .note { saveNote() } else { saveTextOverlay() }
+                                annotationEditor = nil
+                            }
+                            .disabled(annotationText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
+                }
+                .tint(FolqioColors.mint)
             }
             .sheet(isPresented: $showingPassword) {
                 if let document {
@@ -130,6 +161,11 @@ struct ReaderView: View {
             }
             .disabled(document == nil || document?.isLocked == true || recognizing)
             .accessibilityLabel("Offline OCR options")
+            Button { annotationText = ""; annotationEditor = .text } label: {
+                Image(systemName: "text.badge.plus")
+            }
+            .disabled(document == nil || document?.isLocked == true)
+            .accessibilityLabel("Add text to a PDF copy")
             ShareLink(item: library.localURL(for: item)) {
                 Image(systemName: "square.and.arrow.up")
             }
@@ -185,8 +221,11 @@ struct ReaderView: View {
                          disabled: currentPageIndex == 0, action: previousPage)
             ReaderAction(symbol: isFavorite ? "star.fill" : "star",
                          label: "Toggle favorite") { library.toggleFavorite(item) }
-            ReaderAction(symbol: "note.text.badge.plus", label: "Add note",
-                         disabled: document == nil) { showingNote = true }
+            ReaderAction(symbol: "note.text.badge.plus", label: "Add note to copy",
+                         disabled: document == nil || document?.isLocked == true) {
+                annotationText = ""
+                annotationEditor = .note
+            }
             ReaderAction(symbol: "highlighter", label: "Highlight found text",
                          disabled: selectedSearchResult == nil, action: highlightSearchResult)
             ReaderAction(symbol: "square.grid.2x2", label: "Manage PDF pages",
@@ -299,40 +338,71 @@ struct ReaderView: View {
             message = "Find text on one page before highlighting."
             return
         }
+        let pageIndex = document.index(for: selectedPage)
         let bounds = selection.bounds(for: selectedPage)
-        guard !bounds.isEmpty else {
+        guard pageIndex != NSNotFound, !bounds.isEmpty else {
             message = "The selected text cannot be highlighted."
             return
         }
         let annotation = PDFAnnotation(bounds: bounds, forType: .highlight, withProperties: nil)
         annotation.color = UIColor.systemYellow.withAlphaComponent(0.45)
-        selectedPage.addAnnotation(annotation)
-        if document.write(to: library.localURL(for: item)) {
-            selectedSearchResult = nil
-            message = "Highlight saved to your local document."
-        } else {
-            selectedPage.removeAnnotation(annotation)
-            message = "The highlight could not be saved."
-        }
+        saveAnnotatedCopy(annotation, pageIndex: pageIndex, prefix: "Highlighted")
     }
 
     private func saveNote() {
-        let text = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
-        noteText = ""
+        let text = String(annotationText.trimmingCharacters(in: .whitespacesAndNewlines).prefix(2000))
+        annotationText = ""
         guard !text.isEmpty,
               let document,
               let page = document.page(at: currentPageIndex) else { return }
 
-        let pageBounds = page.bounds(for: .mediaBox)
-        let noteBounds = CGRect(x: pageBounds.midX - 15, y: pageBounds.midY - 15,
-                                width: 30, height: 30)
-        let note = PDFAnnotation(bounds: noteBounds, forType: .text, withProperties: nil)
+        let bounds = page.bounds(for: .mediaBox)
+        let note = PDFAnnotation(
+            bounds: CGRect(x: bounds.midX - 15, y: bounds.midY - 15, width: 30, height: 30),
+            forType: .text, withProperties: nil
+        )
         note.contents = text
         note.color = .systemMint
-        page.addAnnotation(note)
-        if !document.write(to: library.localURL(for: item)) {
-            page.removeAnnotation(note)
-            message = "The note could not be saved."
+        saveAnnotatedCopy(note, pageIndex: currentPageIndex, prefix: "Note")
+    }
+
+    private func saveTextOverlay() {
+        let text = annotationText.trimmingCharacters(in: .whitespacesAndNewlines)
+        annotationText = ""
+        guard !text.isEmpty, let page = document?.page(at: currentPageIndex) else { return }
+        let visible = page.bounds(for: .mediaBox).insetBy(dx: 18, dy: 18)
+        guard visible.width > 0, visible.height > 0 else {
+            message = "The selected page cannot accept text."
+            return
+        }
+        let width = min(300, visible.width)
+        let height = min(90, visible.height)
+        let placement = CGRect(x: visible.midX - width / 2,
+                               y: visible.midY - height / 2,
+                               width: width, height: height)
+        let annotation = PDFAnnotation(bounds: placement, forType: .freeText,
+                                       withProperties: nil)
+        annotation.contents = text
+        annotation.font = .systemFont(ofSize: 16)
+        annotation.fontColor = .black
+        annotation.color = UIColor.white.withAlphaComponent(0.9)
+        saveAnnotatedCopy(annotation, pageIndex: currentPageIndex, prefix: "Text")
+    }
+
+    /// Edits are saved through the protected library writer, never PDFKit.write(to:)
+    /// over the source. PDF text and vectors stay intact; existing signatures
+    /// may become invalid in the newly annotated copy.
+    private func saveAnnotatedCopy(_ annotation: PDFAnnotation, pageIndex: Int,
+                                   prefix: String) {
+        guard let document else { return }
+        do {
+            let copy = try DocumentTools.annotatedCopy(document, index: pageIndex,
+                                                       annotation: annotation)
+            _ = try library.createPDF(copy, named: "\(prefix) - \(item.filename)")
+            selectedSearchResult = nil
+            message = "New PDF copy saved to your library. Your original is unchanged. Digital signatures in an edited copy may no longer be valid."
+        } catch {
+            message = "Could not save the PDF copy: \(error.localizedDescription)"
         }
     }
 }

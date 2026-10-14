@@ -21,7 +21,7 @@ This project is a **development preview**, not proof of approval from Google or 
 - `swift ios/generate_app_icon.swift` generates a 1024×1024 icon locally from the Folqio SVG concept. Validate that the generated **opaque** app icon meets Apple's asset rules; actual iPhone/iPad screenshots and visual comparisons remain missing.
 - Check every used required-reason API, bundled SDK and `PrivacyInfo.xcprivacy` declaration against the actual archive. Apple can reject invalid or incomplete manifests.
 - Provide age rating, updated app privacy answers, EU DSA trader status where relevant, store listing, support/privacy policy URLs, accessibility and TestFlight QA.
-- Test camera scanning and Files/Photos permissions on actual iPhones/iPads, including rotation, VoiceOver and Dynamic Type. Native CI currently compiles tests but may skip execution if no booted simulator is present.
+- Test camera scanning and Files/Photos permissions on actual iPhones/iPads, including rotation, VoiceOver and Dynamic Type. Native CI requires booting a simulator and executing XCTest; a failed or unavailable simulator fails the CI gate.
 
 ## Distribution sign-off
 
@@ -47,6 +47,6 @@ https://developer.apple.com/documentation/bundleresources/app-privacy-configurat
 
 The archive and complete privacy report must still be reviewed at actual App Store submission time.
 
-### v0.1.8 execution gate
+### v0.1.8+ execution gate
 
 Native CI and release builds now require a bootable iPhone simulator and an executed XCTest suite rather than merely compiling test targets. The Android app builds with the existing API 36 target. Apple Xcode 26+ and SDK 26 requirements are checked in both workflows. This does not substitute for physical-device signoff or actual upload/provisioning.

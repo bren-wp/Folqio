@@ -55,9 +55,9 @@ final class DocumentLibrary: ObservableObject {
 
         // Reject excessive input before PDFKit parses or copies it.
         let attributes = try FileManager.default.attributesOfItem(atPath: input.path)
-        guard (attributes[.size] as? NSNumber)?.int64Value ?? 0 <= 150 * 1024 * 1024 else {
-            throw DocumentError.tooLarge
-        }
+        guard let sourceBytes = (attributes[.size] as? NSNumber)?.int64Value,
+              sourceBytes > 0 else { throw DocumentError.notPDF }
+        guard sourceBytes <= 150 * 1024 * 1024 else { throw DocumentError.tooLarge }
         guard FileManager.default.isReadableFile(atPath: input.path),
               PDFDocument(url: input) != nil
         else { throw DocumentError.notPDF }
@@ -66,16 +66,19 @@ final class DocumentLibrary: ObservableObject {
         let filename = String(input.lastPathComponent.prefix(180))
         let relativePath = id.uuidString + ".pdf"
         let destination = rootURL.appendingPathComponent(relativePath, isDirectory: false)
-        try FileManager.default.copyItem(at: input, to: destination)
-        do {
-            try FileManager.default.setAttributes(
-                [.protectionKey: FileProtectionType.complete],
-                ofItemAtPath: destination.path
-            )
-        } catch {
-            try? FileManager.default.removeItem(at: destination)
-            throw DocumentError.inaccessible
-        }
+        let staging = rootURL.appendingPathComponent(UUID().uuidString + ".part")
+        // Copy to a private staging file first. If the source is revoked, changes
+        // during copying, or its provider errors, no partial PDF enters the library.
+        defer { try? FileManager.default.removeItem(at: staging) }
+        try FileManager.default.copyItem(at: input, to: staging)
+        guard let copiedBytes = (try FileManager.default.attributesOfItem(atPath: staging.path)[.size] as? NSNumber)?.int64Value,
+              copiedBytes > 0 else { throw DocumentError.notPDF }
+        guard copiedBytes <= 150 * 1024 * 1024 else { throw DocumentError.tooLarge }
+        try FileManager.default.setAttributes(
+            [.protectionKey: FileProtectionType.complete],
+            ofItemAtPath: staging.path
+        )
+        try FileManager.default.moveItem(at: staging, to: destination)
         let item = DocumentItem(id: id, filename: filename, relativePath: relativePath,
                                 isFavorite: false, lastReadPage: 0)
         documents.insert(item, at: 0)

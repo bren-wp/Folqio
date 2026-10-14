@@ -4,11 +4,13 @@ import PDFKit
 enum PDFToolError: LocalizedError {
     case invalidPages
     case invalidDocument
+    case encryptedAnnotationCopy
 
     var errorDescription: String? {
         switch self {
         case .invalidPages: return "Choose one or more valid pages."
         case .invalidDocument: return "The PDF cannot be processed."
+        case .encryptedAnnotationCopy: return "Password-protected PDFs cannot yet be re-saved as annotated copies without changing their protection."
         }
     }
 }
@@ -16,6 +18,20 @@ enum PDFToolError: LocalizedError {
 /// These operations preserve PDF pages and annotations instead of flattening them to images.
 /// All edits are saved as a new file by DocumentLibrary, leaving originals untouched.
 enum DocumentTools {
+    /// Create an independent PDF copy for a new annotation. Never mutate the
+    /// reader's PDFDocument or write over the original file.
+    /// A fresh representation also keeps each edit isolated if persistence fails.
+    static func annotatedCopy(_ source: PDFDocument, index: Int,
+                              annotation: PDFAnnotation) throws -> PDFDocument {
+        guard !source.isEncrypted else { throw PDFToolError.encryptedAnnotationCopy }
+        guard !source.isLocked, index >= 0, index < source.pageCount,
+              let representation = source.dataRepresentation(),
+              let copy = PDFDocument(data: representation),
+              let page = copy.page(at: index) else { throw PDFToolError.invalidDocument }
+        page.addAnnotation(annotation)
+        return copy
+    }
+
     static func merge(_ documents: [PDFDocument]) throws -> PDFDocument {
         guard documents.count >= 2 else { throw PDFToolError.invalidDocument }
         let result = PDFDocument()

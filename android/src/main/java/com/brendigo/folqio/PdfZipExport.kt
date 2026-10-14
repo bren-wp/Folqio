@@ -16,8 +16,6 @@ object PdfZipExport {
     const val MAX_FILES = ZipArchiveWriter.MAX_FILES
     const val MAX_BYTES = ZipArchiveWriter.MAX_BYTES
 
-    fun sanitizedName(value: String): String = ZipArchiveWriter.sanitizedName(value)
-
     fun export(context: Context, selected: List<LocalPdf>, destination: Uri): Int {
         require(selected.size in 1..MAX_FILES) { "Choose between 1 and 100 PDFs." }
         require(destination.scheme == "content") { "Choose a destination using the file picker." }

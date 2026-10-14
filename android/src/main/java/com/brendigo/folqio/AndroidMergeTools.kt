@@ -35,6 +35,9 @@ object AndroidMergeTools {
         try {
             for (uri in sources) {
                 resolver.openFileDescriptor(uri, "r")?.use { descriptor ->
+                    require(MergePolicy.validReportedSize(descriptor.statSize)) {
+                        "Choose a PDF smaller than 150 MB."
+                    }
                     PdfRenderer(descriptor).use { renderer ->
                         require(renderer.pageCount > 0) { "An input PDF has no pages." }
                         require(totalPages + renderer.pageCount <= MergePolicy.MAX_PAGES) {

@@ -12,6 +12,14 @@ class MergePolicyTest {
         assertFalse(MergePolicy.validFiles(6))
     }
 
+    @Test fun rejectsInvalidOrOversizedSeekableInputs() {
+        assertTrue(MergePolicy.validReportedSize(-1)) // Unknown size from provider
+        assertFalse(MergePolicy.validReportedSize(0))
+        assertTrue(MergePolicy.validReportedSize(1024))
+        assertTrue(MergePolicy.validReportedSize(MergePolicy.MAX_INPUT_BYTES))
+        assertFalse(MergePolicy.validReportedSize(MergePolicy.MAX_INPUT_BYTES + 1))
+    }
+
     @Test fun enforcesFinitePageCount() {
         assertFalse(MergePolicy.validPages(0))
         assertTrue(MergePolicy.validPages(1))
