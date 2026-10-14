@@ -22,6 +22,31 @@ final class DocumentLibraryTests: XCTestCase {
         XCTAssertFalse(library.renameLabel(unknown, requestedName: "../invalid"))
     }
 
+    func testImportedPDFKeepsOriginalAndCommitsOneProtectedLocalCopy() throws {
+        let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let source = base.appendingPathComponent("source.pdf")
+        let pdf = PDFDocument()
+        let picture = UIGraphicsImageRenderer(size: CGSize(width: 60, height: 80))
+            .image { ctx in UIColor.white.setFill(); ctx.fill(CGRect(x: 0, y: 0, width: 60, height: 80)) }
+        pdf.insert(try XCTUnwrap(PDFPage(image: picture)), at: 0)
+        XCTAssertTrue(pdf.write(to: source))
+        let original = try Data(contentsOf: source)
+        let storage = base.appendingPathComponent("app")
+        let library = DocumentLibrary(rootURL: storage)
+        let imported = try library.importPDF(from: source)
+        XCTAssertEqual(imported.filename, "source.pdf")
+        XCTAssertNotEqual(library.localURL(for: imported), source)
+        XCTAssertEqual(try Data(contentsOf: source), original)
+        XCTAssertEqual(try Data(contentsOf: library.localURL(for: imported)), original)
+        XCTAssertEqual(library.documents.count, 1)
+        let leftover = try FileManager.default.contentsOfDirectory(atPath: storage.path)
+        XCTAssertFalse(leftover.contains(where: { $0.hasSuffix(".part") }))
+        XCTAssertTrue(library.remove(imported))
+        XCTAssertEqual(try Data(contentsOf: source), original)
+    }
+
     func testRejectsOversizedDocumentBeforeParsing() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
