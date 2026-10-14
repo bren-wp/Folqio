@@ -38,3 +38,14 @@ No line of code or UI screen is considered verified as pixel-perfect until devic
 - A shared sheet composer avoids overlapping SwiftUI alert presentations for note and text-overlay entry.
 - XCTest regressions cover isolation of source annotations and the equality of original file bytes after saving a new annotated copy.
 - The version audit no longer hardcodes an obsolete version. These targeted changes are not a claim of a complete semantic dead-code audit or full-device visual parity.
+
+## v0.1.9 repository-wide static and focused runtime audit
+
+- The source-audit script now walks **every Kotlin and Swift source file** and reports advisory candidates for unreferenced private functions and explicit unused Kotlin imports. It keeps these candidates advisory because lexical reachability is not semantic dead-code proof (callbacks, generated sources and reflection can hide references).
+- Deleted the Android `PdfZipExport.sanitizedName` wrapper: its only consumer was a duplicate test, while the actual archive implementation uses `ZipArchiveWriter.sanitizedName`. Merged useful name-policy assertions into the existing `ZipArchiveWriterTest` and removed `PdfZipExportTest`.
+- Android: bounded the known size of externally selected merge sources before `PdfRenderer` opens them; added boundary tests including SAF unknown-size handling. Cancellation is rethrown rather than being displayed as an error during photo/page operations. Failed camera launches clear their temporary state, and unavailable share targets show a message.
+- iOS: staged imports in private storage, verified source and copied file sizes, and committed only a fully copied file. An XCTest checks imported original bytes, local copy, and temporary-file cleanup.
+- iOS: failures when opening a newly created ZIP output now delete that temporary ZIP. PDF note annotation tests normalize subtype names (PDFKit may serialize `Text` plus a companion `Popup` annotation).
+- UI: constrained Android quick-action text and avoided nested scrolling in the language menu; the iOS home action grid adapts to narrower screens.
+- Existing required gates remain Android unit tests, lint, APK/AAB, iOS build and **executed** simulator XCTest. Device-matrix profiling, complete screen-by-screen visual comparisons, memory/energy traces, accessibility certification, all 25 complete translations, Android lossless PDF editing and genuine existing-text replacement **remain unverified**.
+- **Audit confidence:** inspected repository-wide static patterns and targeted data paths. This is not proof that all dead code, vulnerabilities, layout issues, or performance regressions have been eliminated.
