@@ -172,10 +172,16 @@ final class DocumentToolsTests: XCTestCase {
         let annotations = try XCTUnwrap(savedPDF.page(at: 0)?.annotations)
         let noteType = PDFAnnotationSubtype.text.rawValue
         let popupType = PDFAnnotationSubtype.popup.rawValue
-        let notes = annotations.filter { $0.type == noteType }
+        // PDFKit stores annotation.type as "Text", while subtype raw values may be "/Text".
+        func normalized(_ value: String?) -> String? {
+            value?.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        }
+        let notes = annotations.filter { normalized($0.type) == normalized(noteType) }
         XCTAssertEqual(notes.count, 1, "Unexpected PDF annotations: \(annotations.map { $0.type ?? "nil" })")
         XCTAssertEqual(notes.first?.contents, "Private note")
-        XCTAssertTrue(annotations.allSatisfy { $0.type == noteType || $0.type == popupType },
+        XCTAssertTrue(annotations.allSatisfy {
+            normalized($0.type) == normalized(noteType) || normalized($0.type) == normalized(popupType)
+        },
                       "Unexpected additional annotation types: \(annotations.map { $0.type ?? "nil" })")
     }
 }
