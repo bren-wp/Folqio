@@ -67,22 +67,22 @@ review = []
 for path, content in source_texts.items():
     # Kotlin / Swift private functions that appear just once across both platforms.
     declaration = re.compile(
-        r"^[ \\t]*private[ \\t]+(?:(?:suspend|mutating|static|class)[ \\t]+)?"
-        r"(?:fun|func)[ \\t]+([A-Za-z_]\\w*)[ \\t]*\\(", re.M
+        r"^[ \t]*private[ \t]+(?:(?:suspend|mutating|static|class)[ \t]+)?"
+        r"(?:fun|func)[ \t]+([A-Za-z_]\w*)[ \t]*\(", re.M
     )
     for match in declaration.finditer(content):
         name = match.group(1)
-        occurrences = len(re.findall(r"\\b" + re.escape(name) + r"\\b", combined_text))
+        occurrences = len(re.findall(r"\b" + re.escape(name) + r"\b", combined_text))
         if occurrences == 1:
             line = content.count("\n", 0, match.start()) + 1
             review.append(f"{path.relative_to(root)}:{line}: private function {name} has one lexical occurrence")
     # Exclude wildcard imports, aliases, and framework/module names from this
     # advisory check. Kotlin extension members and generated calls can be indirect.
     if path.suffix == ".kt":
-        without_imports = re.sub(r"^import[ \\t]+[^\n]+$", "", content, flags=re.M)
-        for imported in re.findall(r"^import[ \\t]+([\\w.]+)$", content, flags=re.M):
+        without_imports = re.sub(r"^import[ \t]+[^\n]+$", "", content, flags=re.M)
+        for imported in re.findall(r"^import[ \t]+([\w.]+)$", content, flags=re.M):
             short = imported.rsplit(".", 1)[-1]
-            if not re.search(r"\\b" + re.escape(short) + r"\\b", without_imports):
+            if not re.search(r"\b" + re.escape(short) + r"\b", without_imports):
                 review.append(f"{path.relative_to(root)}: possibly unused import {imported}")
 
 for item in review:
