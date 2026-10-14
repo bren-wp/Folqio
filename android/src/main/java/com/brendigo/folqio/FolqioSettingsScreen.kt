@@ -100,16 +100,14 @@ internal fun FolqioSettingsScreen(
                         Spacer(Modifier.width(10.dp))
                         Text(FolqioLanguages.supported[language] ?: "English")
                     }
+                    // DropdownMenu provides its own bounded scrolling. Nested
+                    // vertical scroll containers can steal touch events on phones.
                     DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
-                        Box(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
-                            Column {
-                                FolqioLanguages.supported.forEach { (code, name) ->
-                                    DropdownMenuItem(text = { Text(name) }, onClick = {
-                                        onLanguageChange(code)
-                                        languageMenu = false
-                                    })
-                                }
-                            }
+                        FolqioLanguages.supported.forEach { (code, name) ->
+                            DropdownMenuItem(text = { Text(name) }, onClick = {
+                                onLanguageChange(code)
+                                languageMenu = false
+                            })
                         }
                     }
                 }
