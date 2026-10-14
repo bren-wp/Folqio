@@ -261,11 +261,10 @@ struct HomeView: View {
                         }
                         let pdf = PDFDocument()
                         for photo in selected {
-                            guard let data = try await photo.loadTransferable(type: Data.self),
-                                  data.count <= PhotoPDFBuilder.maximumBytesPerPhoto,
-                                  let image = UIImage(data: data)
+                            guard let data = try await photo.loadTransferable(type: Data.self)
                             else { throw PhotoPDFError.unreadableImage }
-                            try PhotoPDFBuilder.appendImage(image, to: pdf)
+                            let bounded = try PhotoPDFBuilder.decodeBoundedImage(data)
+                            try PhotoPDFBuilder.appendImage(bounded, to: pdf)
                         }
                         let created = try library.createPDF(
                             pdf, named: selected.count == 1 ? "Photo document.pdf" : "Photo collection.pdf"
