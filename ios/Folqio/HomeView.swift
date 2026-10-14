@@ -151,7 +151,10 @@ struct HomeView: View {
                                 .foregroundStyle(FolqioColors.muted)
                                 .padding(.vertical, 24)
                         }
-                        ForEach(filtered) { document in
+                        // Build visible document rows on demand to avoid eagerly
+                        // creating PDFKit thumbnails for an entire large library.
+                        LazyVStack(spacing: 10) {
+                            ForEach(filtered) { document in
                             Button {
                                 selectedDocument = document
                             } label: {
@@ -194,8 +197,9 @@ struct HomeView: View {
                                     }
                                 }
                             }
+                                                    }
                         }
-                        Text("PRIVATE  ·  OFFLINE-FIRST  ·  SECURE")
+                        Text("ON-DEVICE  ·  NO ACCOUNT  ·  PRIVATE BY DESIGN")
                             .font(.caption2.weight(.medium))
                             .tracking(1)
                             .foregroundStyle(FolqioColors.muted)
@@ -358,6 +362,8 @@ private struct BottomNavigationItem: View {
                     .font(.system(size: 19))
                 Text(title)
                     .font(.system(size: 10, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
             }
             .foregroundStyle(active ? FolqioColors.mint : FolqioColors.muted)
             .frame(maxWidth: .infinity)
