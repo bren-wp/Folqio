@@ -93,3 +93,4 @@
 - JVM regression tests cover interrupted deletion, rollback, cleanup and non-overwrite safeguards.
 - Android quick actions reflow on compact widths so action labels do not need to fit into three narrow columns.
 - Remaining: verify interruption and low-storage behavior on real Android devices; parallelize larger file tasks carefully, avoid UI stalls, and implement lossless Android editing/OCR.
+- Defensive follow-up: skip tombstone cleanup when the library index cannot be parsed; restore in-memory favorites, bookmarks and page state after a failed metadata commit.

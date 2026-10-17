@@ -19,8 +19,13 @@ class PdfLibrary(context: Context) {
     init {
         // An interrupted deletion must not make an otherwise intact PDF disappear.
         // Reconcile UUID-named tombstones using durable library metadata at startup.
-        val owned = recent().mapNotNull { generatedFileName(it.uri) }.toSet()
-        PendingPdfDeletion.recover(java.io.File(appContext.filesDir, "created"), owned)
+        val savedIndex = preferences.getString("recent", null)
+        // Do not delete tombstones if the metadata index is missing or corrupt:
+        // it may be the only remaining copy of a user document.
+        if (savedIndex != null && runCatching { JSONArray(savedIndex) }.isSuccess) {
+            val owned = recent().mapNotNull { generatedFileName(it.uri) }.toSet()
+            PendingPdfDeletion.recover(java.io.File(appContext.filesDir, "created"), owned)
+        }
     }
 
     fun recent(): List<LocalPdf> {
@@ -62,10 +67,15 @@ class PdfLibrary(context: Context) {
         val folder = java.io.File(appContext.filesDir, "created")
         if (ownedName != null && !PendingPdfDeletion.stage(folder, ownedName)) return false
 
-        val favorites = preferences.getStringSet("favorites", emptySet()).orEmpty().toMutableSet()
+        val originalRecent = preferences.getString("recent", "[]")
+        val originalFavorites = preferences.getStringSet("favorites", emptySet()).orEmpty().toSet()
+        val originalBookmarks = preferences.getStringSet("bookmarks", emptySet()).orEmpty().toSet()
+        val pageKey = lastPageKey(file.uri)
+        val hadPage = preferences.contains(pageKey)
+        val originalPage = preferences.getInt(pageKey, 0)
+        val favorites = originalFavorites.toMutableSet()
         favorites.remove(file.uri)
-        val bookmarks = preferences.getStringSet("bookmarks", emptySet()).orEmpty()
-            .filterNot { it.startsWith("${file.uri}#") }.toSet()
+        val bookmarks = originalBookmarks.filterNot { it.startsWith("${file.uri}#") }.toSet()
 
         val remaining = JSONArray()
         documents.filterNot { it.uri == file.uri }.forEach { document ->
@@ -75,10 +85,18 @@ class PdfLibrary(context: Context) {
             .putString("recent", remaining.toString())
             .putStringSet("favorites", favorites)
             .putStringSet("bookmarks", bookmarks)
-            .remove(lastPageKey(file.uri))
+            .remove(pageKey)
             .commit()
 
         if (!committed) {
+            // SharedPreferences may have changed in memory even when the disk
+            // commit failed. Restore the previous visible state as well.
+            val restore = preferences.edit()
+                .putString("recent", originalRecent)
+                .putStringSet("favorites", originalFavorites)
+                .putStringSet("bookmarks", originalBookmarks)
+            if (hadPage) restore.putInt(pageKey, originalPage) else restore.remove(pageKey)
+            restore.apply()
             if (ownedName != null) PendingPdfDeletion.rollback(folder, ownedName)
             return false
         }
