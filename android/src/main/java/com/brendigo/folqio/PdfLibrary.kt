@@ -16,6 +16,18 @@ class PdfLibrary(context: Context) {
     private val appContext = context.applicationContext
     private val preferences = appContext.getSharedPreferences("folqio_library_v1", Context.MODE_PRIVATE)
 
+    init {
+        // An interrupted deletion must not make an otherwise intact PDF disappear.
+        // Reconcile UUID-named tombstones using durable library metadata at startup.
+        val savedIndex = preferences.getString("recent", null)
+        // Do not delete tombstones if the metadata index is missing or corrupt:
+        // it may be the only remaining copy of a user document.
+        if (savedIndex != null && runCatching { JSONArray(savedIndex) }.isSuccess) {
+            val owned = recent().mapNotNull { generatedFileName(it.uri) }.toSet()
+            PendingPdfDeletion.recover(java.io.File(appContext.filesDir, "created"), owned)
+        }
+    }
+
     fun recent(): List<LocalPdf> {
         val entries = runCatching { JSONArray(preferences.getString("recent", "[]")) }.getOrDefault(JSONArray())
         return buildList {
@@ -42,26 +54,54 @@ class PdfLibrary(context: Context) {
     }
 
     /**
-     * Removing an imported document only removes the shortcut; an app-created PDF
-     * is permanently deleted after explicit confirmation in the UI.
+     * Transactional delete for an app-owned PDF. First rename to a sandbox-local
+     * tombstone, then synchronously commit metadata. If the commit fails, restore
+     * the original name. The next launch reconciles any interrupted deletion.
+     * External provider documents are never deleted by Folqio.
      */
     fun remove(file: LocalPdf): Boolean {
-        val ownedName = generatedFileName(file.uri)
-        if (ownedName != null) {
-            val ownedFile = java.io.File(appContext.filesDir, "created/$ownedName")
-            if (ownedFile.exists() && !ownedFile.delete()) return false
-        }
+        val documents = recent()
+        if (documents.none { it.uri == file.uri }) return false
 
-        saveRecent(recent().filterNot { it.uri == file.uri })
-        val favorites = preferences.getStringSet("favorites", emptySet()).orEmpty().toMutableSet()
+        val ownedName = generatedFileName(file.uri)
+        val folder = java.io.File(appContext.filesDir, "created")
+        if (ownedName != null && !PendingPdfDeletion.stage(folder, ownedName)) return false
+
+        val originalRecent = preferences.getString("recent", "[]")
+        val originalFavorites = preferences.getStringSet("favorites", emptySet()).orEmpty().toSet()
+        val originalBookmarks = preferences.getStringSet("bookmarks", emptySet()).orEmpty().toSet()
+        val pageKey = lastPageKey(file.uri)
+        val hadPage = preferences.contains(pageKey)
+        val originalPage = preferences.getInt(pageKey, 0)
+        val favorites = originalFavorites.toMutableSet()
         favorites.remove(file.uri)
-        val bookmarks = preferences.getStringSet("bookmarks", emptySet()).orEmpty()
-            .filterNot { it.startsWith("${file.uri}#") }.toSet()
-        preferences.edit()
+        val bookmarks = originalBookmarks.filterNot { it.startsWith("${file.uri}#") }.toSet()
+
+        val remaining = JSONArray()
+        documents.filterNot { it.uri == file.uri }.forEach { document ->
+            remaining.put(JSONObject().put("uri", document.uri).put("name", document.name))
+        }
+        val committed = preferences.edit()
+            .putString("recent", remaining.toString())
             .putStringSet("favorites", favorites)
             .putStringSet("bookmarks", bookmarks)
-            .remove(lastPageKey(file.uri))
-            .apply()
+            .remove(pageKey)
+            .commit()
+
+        if (!committed) {
+            // SharedPreferences may have changed in memory even when the disk
+            // commit failed. Restore the previous visible state as well.
+            val restore = preferences.edit()
+                .putString("recent", originalRecent)
+                .putStringSet("favorites", originalFavorites)
+                .putStringSet("bookmarks", originalBookmarks)
+            if (hadPage) restore.putInt(pageKey, originalPage) else restore.remove(pageKey)
+            restore.apply()
+            if (ownedName != null) PendingPdfDeletion.rollback(folder, ownedName)
+            return false
+        }
+        // A failed cleanup is safe; startup recovery will remove the tombstone.
+        if (ownedName != null) PendingPdfDeletion.finish(folder, ownedName)
         return true
     }
 
@@ -77,9 +117,7 @@ class PdfLibrary(context: Context) {
 
     companion object {
         fun isGeneratedPdfFileName(filename: String): Boolean =
-            Regex(
-                "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\.pdf"
-            ).matches(filename)
+            PendingPdfDeletion.isOwnedFileName(filename)
     }
 
     private fun saveRecent(documents: List<LocalPdf>) {

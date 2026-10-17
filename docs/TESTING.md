@@ -13,6 +13,8 @@ Use personal test documents with no real sensitive information. Test on physical
 7. Extract and rotate page copies; verify the new PDF opens, and disclosure says **flattened**.
 7. Share a PDF, then return; confirm no sharing happens without explicit user action.
 8. Grant revocation and corrupt PDF input: verify graceful error and no crash.
+9. Delete an app-owned PDF and verify it disappears from disk and library; interrupt removal before and after metadata commit to verify tombstone recovery. Retry under low-storage conditions.
+10. On a narrow phone (including enlarged text), verify Open, Scan and Photos cards remain readable; compare wide phones and tablet layouts.
 9. No-network test: airplane mode, reopen app, repeat offline actions.
 
 ## iOS

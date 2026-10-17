@@ -190,10 +190,22 @@ internal fun FolqioHome(
                         Text("Quick actions", color = FolqioPalette.pearl,
                             style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(10.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            QuickAction(tr("open"), Icons.Default.FolderOpen, Modifier.weight(1f), onOpen)
-                            QuickAction(tr("scan"), Icons.Default.CameraAlt, Modifier.weight(1f), onCamera)
-                            QuickAction(tr("photos"), Icons.Default.Photo, Modifier.weight(1f), onPhoto)
+                        BoxWithConstraints(Modifier.fillMaxWidth()) {
+                            if (maxWidth < 380.dp) {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        QuickAction(tr("open"), Icons.Default.FolderOpen, Modifier.weight(1f), onOpen)
+                                        QuickAction(tr("scan"), Icons.Default.CameraAlt, Modifier.weight(1f), onCamera)
+                                    }
+                                    QuickAction(tr("photos"), Icons.Default.Photo, Modifier.fillMaxWidth(), onPhoto)
+                                }
+                            } else {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    QuickAction(tr("open"), Icons.Default.FolderOpen, Modifier.weight(1f), onOpen)
+                                    QuickAction(tr("scan"), Icons.Default.CameraAlt, Modifier.weight(1f), onCamera)
+                                    QuickAction(tr("photos"), Icons.Default.Photo, Modifier.weight(1f), onPhoto)
+                                }
+                            }
                         }
                         Spacer(Modifier.height(9.dp))
                         Card(

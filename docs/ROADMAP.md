@@ -86,3 +86,11 @@
 - iOS adds a blank A4 page to a separate PDFKit copy and disables no-op previous/next page moves; adaptive page thumbnail cards support wider layouts.
 - Added JVM budget/overflow tests and PDFKit blank-page/source-isolation tests.
 - Pending: validation on device with camera content providers, all original-page properties and PDF signature preservation, true Android lossless editing and editor parity.
+
+## v0.1.12 transactional Android document deletion
+- App-owned UUID PDF deletion now stages a same-directory tombstone, commits metadata synchronously, and restores the file when metadata persistence fails.
+- On startup, Folqio reconciles UUID tombstones against the durable library index without touching other files or replacing existing source PDFs.
+- JVM regression tests cover interrupted deletion, rollback, cleanup and non-overwrite safeguards.
+- Android quick actions reflow on compact widths so action labels do not need to fit into three narrow columns.
+- Remaining: verify interruption and low-storage behavior on real Android devices; parallelize larger file tasks carefully, avoid UI stalls, and implement lossless Android editing/OCR.
+- Defensive follow-up: skip tombstone cleanup when the library index cannot be parsed; restore in-memory favorites, bookmarks and page state after a failed metadata commit.
