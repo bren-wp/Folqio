@@ -151,6 +151,19 @@ final class DocumentToolsTests: XCTestCase {
         XCTAssertThrowsError(try DocumentTools.deletedCopy(makePDF(pages: 1), index: 0))
     }
 
+    func testInsertBlankPagePreservesSourceAndExistingPageContents() throws {
+        let original = makePDF(pages: 2)
+        let firstPage = original.page(at: 0)
+        let edited = try DocumentTools.insertedBlankPageCopy(original, after: 0)
+        XCTAssertEqual(edited.pageCount, 3)
+        XCTAssertEqual(original.pageCount, 2)
+        XCTAssertTrue(original.page(at: 0) === firstPage)
+        XCTAssertEqual(edited.page(at: 1)?.bounds(for: .mediaBox).width, 595)
+        XCTAssertEqual(edited.page(at: 1)?.bounds(for: .mediaBox).height, 842)
+        XCTAssertThrowsError(try DocumentTools.insertedBlankPageCopy(original, after: -1))
+        XCTAssertThrowsError(try DocumentTools.insertedBlankPageCopy(original, after: 2))
+    }
+
     func testRotateAndReorder() throws {
         let pdf = makePDF(pages: 3)
         let rotated = try DocumentTools.rotatedCopy(pdf, index: 0)

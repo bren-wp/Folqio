@@ -12,7 +12,7 @@ struct PageToolsView: View {
     @State private var error: String?
 
     @State private var document: PDFDocument?
-    private let columns = [GridItem(.flexible()), GridItem(.flexible())]
+    private let columns = [GridItem(.adaptive(minimum: 140, maximum: 200), spacing: 12)]
 
     var body: some View {
         NavigationStack {
@@ -58,15 +58,19 @@ struct PageToolsView: View {
                         actionButton("Extract selected page", icon: "square.on.square") { document in
                             try DocumentTools.extract(document, indices: [pageIndex])
                         }
+                        actionButton("Insert blank A4 page after selected", icon: "plus.rectangle.on.rectangle") { document in
+                            try DocumentTools.insertedBlankPageCopy(document, after: pageIndex)
+                        }
                         if document?.pageCount ?? 0 > 1 {
                             actionButton("Delete selected page in copy", icon: "trash") { document in
                                 try DocumentTools.deletedCopy(document, index: pageIndex)
                             }
                         }
-                        actionButton("Move page earlier", icon: "arrow.up") { document in
+                        actionButton("Move page earlier", icon: "arrow.up", enabled: pageIndex > 0) { document in
                             try DocumentTools.movedCopy(document, from: pageIndex, to: max(0, pageIndex - 1))
                         }
-                        actionButton("Move page later", icon: "arrow.down") { document in
+                        actionButton("Move page later", icon: "arrow.down",
+                                     enabled: pageIndex < (document?.pageCount ?? 1) - 1) { document in
                             try DocumentTools.movedCopy(document, from: pageIndex, to: min(document.pageCount - 1, pageIndex + 1))
                         }
                     }
@@ -89,7 +93,7 @@ struct PageToolsView: View {
         .onAppear { document = PDFDocument(url: library.localURL(for: item)) }
     }
 
-    private func actionButton(_ title: String, icon: String,
+    private func actionButton(_ title: String, icon: String, enabled: Bool = true,
                               edit: @escaping (PDFDocument) throws -> PDFDocument) -> some View {
         Button {
             do {
@@ -107,6 +111,6 @@ struct PageToolsView: View {
                 .padding(14)
                 .background(FolqioColors.slate, in: RoundedRectangle(cornerRadius: 14))
         }
-        .disabled(document == nil)
+        .disabled(document == nil || !enabled)
     }
 }

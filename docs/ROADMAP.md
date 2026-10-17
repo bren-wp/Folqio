@@ -79,3 +79,10 @@
 - iOS photo picker decodes bounded, EXIF-correct ImageIO thumbnails rather than allocating full-resolution originals before PDF creation.
 - Native tests check page-source isolation, corrupted photo data and photo dimension bounds.
 - Outstanding: true replacement of existing PDF text and lossless Android page editing; real-device visual, memory and accessibility qualification; signed store packages; full translation coverage.
+
+## v0.1.11 photo and page hardening
+
+- Android selected images now have a 25 MB provider-declared size gate and a separate byte-consumption gate for each local image decoding and EXIF pass. Remaining risk: a dishonest provider can return a valid small prefix followed by unused trailing bytes; verify native file size where a reliable provider declaration exists.
+- iOS adds a blank A4 page to a separate PDFKit copy and disables no-op previous/next page moves; adaptive page thumbnail cards support wider layouts.
+- Added JVM budget/overflow tests and PDFKit blank-page/source-isolation tests.
+- Pending: validation on device with camera content providers, all original-page properties and PDF signature preservation, true Android lossless editing and editor parity.
