@@ -17,6 +17,9 @@ object PhotoSelectionPolicy {
  * Buffered decoders must wrap this stream, not the other way around, so mark/reset
  * cannot bypass the underlying byte budget.
  */
+internal class PhotoSizeLimitExceededException :
+    IOException("Choose a photo smaller than 25 MB.")
+
 internal class BoundedPhotoInputStream(
     input: InputStream,
     private val maxBytes: Long = PhotoSelectionPolicy.MAX_BYTES_PER_PHOTO
@@ -28,10 +31,22 @@ internal class BoundedPhotoInputStream(
     override fun read(): Int {
         val byte = super.read()
         if (byte != -1) {
-            if (consumed >= maxBytes) throw IOException("Photo exceeds the 25 MB size limit.")
+            if (consumed >= maxBytes) throw PhotoSizeLimitExceededException()
             consumed++
         }
         return byte
+    }
+
+    override fun skip(count: Long): Long {
+        if (count <= 0L) return 0L
+        val remaining = maxBytes - consumed
+        if (remaining == 0L) {
+            if (super.read() != -1) throw PhotoSizeLimitExceededException()
+            return 0L
+        }
+        val skipped = super.skip(minOf(count, remaining))
+        consumed += skipped
+        return skipped
     }
 
     override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
@@ -41,7 +56,7 @@ internal class BoundedPhotoInputStream(
         if (length == 0) return 0
         val remaining = maxBytes - consumed
         if (remaining == 0L) {
-            if (super.read() != -1) throw IOException("Photo exceeds the 25 MB size limit.")
+            if (super.read() != -1) throw PhotoSizeLimitExceededException()
             return -1
         }
         val size = super.read(buffer, offset, minOf(remaining, length.toLong()).toInt())

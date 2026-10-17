@@ -30,6 +30,17 @@ class PhotoSelectionPolicyTest {
         }
     }
 
+    @Test fun skippingCannotBypassTheByteLimit() {
+        BoundedPhotoInputStream(ByteArrayInputStream(byteArrayOf(1, 2, 3, 4)), 2).use { stream ->
+            assertEquals(2L, stream.skip(100))
+            assertThrows(PhotoSizeLimitExceededException::class.java) { stream.read() }
+        }
+        BoundedPhotoInputStream(ByteArrayInputStream(byteArrayOf(1, 2)), 2).use { stream ->
+            assertEquals(2L, stream.skip(100))
+            assertEquals(-1, stream.read())
+        }
+    }
+
     @Test fun capsImportSize() {
         assertTrue(PhotoSelectionPolicy.isValidCount(10))
         assertFalse(PhotoSelectionPolicy.isValidCount(11))

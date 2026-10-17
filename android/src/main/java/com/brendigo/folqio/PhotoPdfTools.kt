@@ -105,9 +105,9 @@ object PhotoPdfTools {
                     if (cursor.moveToFirst() && !cursor.isNull(0)) cursor.getLong(0) else null
                 }
         }.getOrNull()
-        require(reportedBytes == null || reportedBytes < 0 ||
-            reportedBytes <= PhotoSelectionPolicy.MAX_BYTES_PER_PHOTO
-        ) { "Choose a photo smaller than 25 MB." }
+        if (reportedBytes != null && reportedBytes >= 0 &&
+            reportedBytes > PhotoSelectionPolicy.MAX_BYTES_PER_PHOTO
+        ) throw PhotoSizeLimitExceededException()
         val source = resolver.openInputStream(uri) ?: error("Cannot access photo")
         return BoundedPhotoInputStream(source).buffered(65536)
     }
@@ -126,13 +126,17 @@ object PhotoPdfTools {
     }
 
     private fun orientBitmap(context: Context, uri: Uri, image: Bitmap): Bitmap {
-        val orientation = runCatching {
+        val orientation = try {
             openBoundedPhoto(context, uri).use { stream ->
                 ExifInterface(stream).getAttributeInt(
                     ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL
                 )
             }
-        }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
+        } catch (failure: PhotoSizeLimitExceededException) {
+            throw failure
+        } catch (_: Exception) {
+            ExifInterface.ORIENTATION_NORMAL
+        }
         if (orientation == ExifInterface.ORIENTATION_NORMAL ||
             orientation == ExifInterface.ORIENTATION_UNDEFINED) return image
 
