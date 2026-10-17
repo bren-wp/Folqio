@@ -80,6 +80,17 @@ enum DocumentTools {
         return result
     }
 
+    /// Insert an A4-size blank page into an independent PDFKit copy. Existing
+    /// source pages retain their PDF objects (including vector text and graphics).
+    static func insertedBlankPageCopy(_ source: PDFDocument, after index: Int) throws -> PDFDocument {
+        guard index >= 0, index < source.pageCount else { throw PDFToolError.invalidPages }
+        let result = try editableCopy(source)
+        let blank = PDFPage()
+        blank.setBounds(CGRect(x: 0, y: 0, width: 595, height: 842), for: .mediaBox)
+        result.insert(blank, at: index + 1)
+        return result
+    }
+
     static func movedCopy(_ source: PDFDocument, from: Int, to: Int) throws -> PDFDocument {
         guard from >= 0, from < source.pageCount, to >= 0, to < source.pageCount
         else { throw PDFToolError.invalidPages }

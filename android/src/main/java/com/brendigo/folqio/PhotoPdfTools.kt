@@ -10,8 +10,10 @@ import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
 import android.media.ExifInterface
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.core.content.FileProvider
 import java.io.File
+import java.io.InputStream
 import java.io.FileOutputStream
 import java.util.UUID
 import kotlin.math.min
@@ -91,27 +93,50 @@ object PhotoPdfTools {
         }
     }
 
+    /**
+     * Reject a known oversized provider file before parsing; also cap streamed
+     * bytes when the provider omits or misreports OpenableColumns.SIZE.
+     */
+    private fun openBoundedPhoto(context: Context, uri: Uri): InputStream {
+        val resolver = context.contentResolver
+        val reportedBytes = runCatching {
+            resolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)
+                ?.use { cursor ->
+                    if (cursor.moveToFirst() && !cursor.isNull(0)) cursor.getLong(0) else null
+                }
+        }.getOrNull()
+        if (reportedBytes != null && reportedBytes >= 0 &&
+            reportedBytes > PhotoSelectionPolicy.MAX_BYTES_PER_PHOTO
+        ) throw PhotoSizeLimitExceededException()
+        val source = resolver.openInputStream(uri) ?: error("Cannot access photo")
+        return BoundedPhotoInputStream(source).buffered(65536)
+    }
+
     private fun decodeBounded(context: Context, uri: Uri): Bitmap {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        val input = context.contentResolver.openInputStream(uri) ?: error("Cannot access photo")
+        val input = openBoundedPhoto(context, uri)
         input.use { BitmapFactory.decodeStream(it, null, bounds) }
         require(bounds.outWidth > 0 && bounds.outHeight > 0) { "Unreadable photo" }
         var sample = 1
         while (bounds.outWidth / sample > 1600 || bounds.outHeight / sample > 2200) sample *= 2
         val options = BitmapFactory.Options().apply { inSampleSize = sample }
-        return context.contentResolver.openInputStream(uri)?.use {
+        return openBoundedPhoto(context, uri).use {
             BitmapFactory.decodeStream(it, null, options)
         } ?: error("Cannot decode photo")
     }
 
     private fun orientBitmap(context: Context, uri: Uri, image: Bitmap): Bitmap {
-        val orientation = runCatching {
-            context.contentResolver.openInputStream(uri)?.use { stream ->
+        val orientation = try {
+            openBoundedPhoto(context, uri).use { stream ->
                 ExifInterface(stream).getAttributeInt(
                     ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL
                 )
-            } ?: ExifInterface.ORIENTATION_NORMAL
-        }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
+            }
+        } catch (failure: PhotoSizeLimitExceededException) {
+            throw failure
+        } catch (_: Exception) {
+            ExifInterface.ORIENTATION_NORMAL
+        }
         if (orientation == ExifInterface.ORIENTATION_NORMAL ||
             orientation == ExifInterface.ORIENTATION_UNDEFINED) return image
 
