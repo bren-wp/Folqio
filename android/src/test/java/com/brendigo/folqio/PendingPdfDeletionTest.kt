@@ -57,6 +57,16 @@ class PendingPdfDeletionTest {
         source().writeText("live source")
         PendingPdfDeletion.recover(temporary.root, setOf(owned))
         assertEquals("live source", source().readText())
-        assertFalse(pending.exists())
+        assertTrue(pending.exists())
+        assertEquals("older tombstone", pending.readText())
+    }
+
+    @Test fun conflictingUnreferencedTombstoneIsAlsoPreserved() {
+        val pending = File(temporary.root, owned.removeSuffix(".pdf") + ".pending-delete")
+        pending.writeText("staged content")
+        source().writeText("new live content")
+        PendingPdfDeletion.recover(temporary.root, emptySet())
+        assertEquals("new live content", source().readText())
+        assertEquals("staged content", pending.readText())
     }
 }

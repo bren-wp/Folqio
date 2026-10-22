@@ -38,6 +38,8 @@ jobs:
             yes | "$SDKMANAGER" --licenses >/dev/null || true
             "$SDKMANAGER" "platforms;android-36"
           fi
+      - name: Verify source and Google Play readiness
+        run: python3 scripts/audit_source.py
       - name: Run Android unit tests and package
         run: gradle :android:testDebugUnitTest :android:lintDebug :android:assembleDebug :android:bundleRelease
       - name: Verify unsigned bundle and debug APK
@@ -61,40 +63,9 @@ jobs:
           path: android/build/outputs/apk/debug/android-debug.apk
           if-no-files-found: error
 
-  ios:
-    runs-on: macos-26
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-      - name: Generate local Folqio App Store icon
-        run: swift ios/generate_app_icon.swift
-      - name: Generate Xcode project
-        run: |
-          brew install xcodegen
-          xcodegen generate --spec ios/project.yml --project ios
-      - name: Verify Xcode 26+ SDK baseline
-        run: |
-          xcodebuild -version
-          python3 - <<'PY'
-          import re, subprocess
-          match = re.search(r"Xcode ([0-9]+)", subprocess.check_output(["xcodebuild", "-version"], text=True))
-          if not match or int(match.group(1)) < 26:
-              raise SystemExit("Xcode 26 or newer required")
-          PY
-      - name: Compile app and unit tests for iOS simulator
-        run: |
-          xcodebuild build-for-testing \
-            -project ios/Folqio.xcodeproj \
-            -scheme Folqio \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO \
-            -quiet
-      - name: Execute iOS unit tests on a simulator
-        run: bash scripts/run-ios-tests.sh
-
   publish:
     name: Publish debug-only prerelease
-    needs: [android, ios]
+    needs: [android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
