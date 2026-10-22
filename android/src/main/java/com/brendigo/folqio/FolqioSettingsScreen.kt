@@ -27,6 +27,7 @@ internal fun FolqioSettingsScreen(
     confirmRemoval: Boolean,
     onConfirmChange: (Boolean) -> Unit,
     files: List<LocalPdf>,
+    busy: Boolean,
     onExport: (List<LocalPdf>) -> Unit
 ) {
     var languageMenu by remember { mutableStateOf(false) }
@@ -62,7 +63,7 @@ internal fun FolqioSettingsScreen(
             },
             confirmButton = {
                 TextButton(
-                    enabled = selection.isNotEmpty(),
+                    enabled = selection.isNotEmpty() && !busy,
                     onClick = {
                         selecting = false
                         onExport(files.filter { it.uri in selection })
@@ -131,7 +132,7 @@ internal fun FolqioSettingsScreen(
                 Button(onClick = {
                     selection = files.take(PdfZipExport.MAX_FILES).map { it.uri }.toSet()
                     selecting = true
-                }, enabled = files.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
+                }, enabled = files.isNotEmpty() && !busy, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.Archive, null)
                     Spacer(Modifier.width(8.dp))
                     Text(tr("exportZip"))

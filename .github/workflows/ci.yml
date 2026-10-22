@@ -40,6 +40,8 @@ jobs:
             yes | "$SDKMANAGER" --licenses >/dev/null || true
             "$SDKMANAGER" "platforms;android-36"
           fi
+      - name: Test source audit rules
+        run: python3 -m unittest discover -s scripts/tests -v
       - name: Verify source and store readiness basics
         run: python3 scripts/audit_source.py
       - name: Verify native Android app

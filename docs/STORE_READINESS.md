@@ -37,3 +37,7 @@ References:
 - https://support.google.com/googleplay/android-developer/answer/10144311
 - https://support.google.com/googleplay/android-developer/answer/9898842
 - https://developer.android.com/guide/practices/page-sizes
+
+## v0.1.14 Google Play preflight
+
+Android versionName is 0.1.14, versionCode is 15. The build keeps target SDK 36, offline-first permissions and private FileProvider. CI additionally runs Python unit tests for the source auditor and Kotlin unit tests/lint/release R8 build. Before submission, recheck the final merged manifest, store listing screenshot accuracy, Data safety and signing identities; the development AAB remains unsigned.

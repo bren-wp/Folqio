@@ -14,3 +14,12 @@
 12. Review final merged manifest, Data safety disclosures, signing identity, 16 KB compatibility if native libraries exist, and authentic Play listing screenshots.
 
 CI gate: python3 scripts/audit_source.py and Gradle testDebugUnitTest, lintDebug, assembleDebug, bundleRelease. CI success is not proof of physical-device QA or Play approval.
+
+## v0.1.14 — lifecycle and UI regression cases
+
+1. Open a multipage PDF, navigate to a middle page, rotate between portrait/landscape and verify the same document and page are restored (also test with `Remember last page` disabled).
+2. Open a PDF from Files through ACTION_VIEW; rotate and verify no second import is created. Send the **same URI** again via ACTION_VIEW and verify the request is processed, not ignored.
+3. With an image import, PDF merge or ZIP export in progress, verify Home quick actions, Merge and ZIP confirmation are disabled; they must re-enable after failure or success.
+4. Review a narrow 360dp phone and 150% text scale for no clipped actions; compare against actual Folqio screenshot references and report discrepancies rather than claiming 1:1 from static inspection.
+5. Run `python3 -m unittest discover -s scripts/tests -v`, `python3 scripts/audit_source.py`, `gradle :android:testDebugUnitTest :android:lintDebug :android:assembleDebug :android:bundleRelease`.
+6. Re-verify that selecting/canceling external providers leaves original file bytes unchanged and app-created thumbnails and PDF previews release bitmap memory on page changes.

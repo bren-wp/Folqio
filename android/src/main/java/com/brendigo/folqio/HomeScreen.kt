@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.CallMerge
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -53,8 +54,8 @@ internal fun FolqioHome(
     notice: String?
 ) {
     fun tr(key: String) = FolqioLanguages.text(language, key)
-    var tab by remember { mutableStateOf(FolqioTab.HOME) }
-    var query by remember { mutableStateOf("") }
+    var tab by rememberSaveable { mutableStateOf(FolqioTab.HOME) }
+    var query by rememberSaveable { mutableStateOf("") }
     var renaming by remember { mutableStateOf<LocalPdf?>(null) }
     var renameText by remember { mutableStateOf("") }
     var invalidRename by remember { mutableStateOf(false) }
@@ -165,6 +166,7 @@ internal fun FolqioHome(
                         confirmRemoval = confirmRemoval,
                         onConfirmChange = onConfirmChange,
                         files = files,
+                        busy = busy,
                         onExport = onZip
                     )
                 }
@@ -178,7 +180,7 @@ internal fun FolqioHome(
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold, color = FolqioPalette.pearl)
                                 Text("Read PDFs and create new documents locally.", color = FolqioPalette.muted)
-                                Button(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
+                                Button(onClick = onOpen, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
                                     Icon(Icons.Default.FolderOpen, contentDescription = null)
                                     Spacer(Modifier.width(8.dp))
                                     Text(tr("open"))
@@ -194,22 +196,23 @@ internal fun FolqioHome(
                             if (maxWidth < 380.dp) {
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        QuickAction(tr("open"), Icons.Default.FolderOpen, Modifier.weight(1f), onOpen)
-                                        QuickAction(tr("scan"), Icons.Default.CameraAlt, Modifier.weight(1f), onCamera)
+                                        QuickAction(tr("open"), Icons.Default.FolderOpen, Modifier.weight(1f), onOpen, enabled = !busy)
+                                        QuickAction(tr("scan"), Icons.Default.CameraAlt, Modifier.weight(1f), onCamera, enabled = !busy)
                                     }
-                                    QuickAction(tr("photos"), Icons.Default.Photo, Modifier.fillMaxWidth(), onPhoto)
+                                    QuickAction(tr("photos"), Icons.Default.Photo, Modifier.fillMaxWidth(), onPhoto, enabled = !busy)
                                 }
                             } else {
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    QuickAction(tr("open"), Icons.Default.FolderOpen, Modifier.weight(1f), onOpen)
-                                    QuickAction(tr("scan"), Icons.Default.CameraAlt, Modifier.weight(1f), onCamera)
-                                    QuickAction(tr("photos"), Icons.Default.Photo, Modifier.weight(1f), onPhoto)
+                                    QuickAction(tr("open"), Icons.Default.FolderOpen, Modifier.weight(1f), onOpen, enabled = !busy)
+                                    QuickAction(tr("scan"), Icons.Default.CameraAlt, Modifier.weight(1f), onCamera, enabled = !busy)
+                                    QuickAction(tr("photos"), Icons.Default.Photo, Modifier.weight(1f), onPhoto, enabled = !busy)
                                 }
                             }
                         }
                         Spacer(Modifier.height(9.dp))
                         Card(
                             onClick = onMerge,
+                            enabled = !busy,
                             colors = CardDefaults.cardColors(containerColor = FolqioPalette.slate),
                             shape = RoundedCornerShape(15.dp)
                         ) {
@@ -250,7 +253,7 @@ internal fun FolqioHome(
                     }
                 }
                 items(filtered, key = { it.uri }) { file ->
-                    Card(onClick = { onSelect(file) },
+                    Card(onClick = { onSelect(file) }, enabled = !busy,
                         colors = CardDefaults.cardColors(containerColor = FolqioPalette.slate),
                         shape = RoundedCornerShape(15.dp)) {
                         Row(Modifier.fillMaxWidth().padding(start = 14.dp, top = 8.dp,
@@ -261,7 +264,7 @@ internal fun FolqioHome(
                                 overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                             var menuOpen by remember(file.uri) { mutableStateOf(false) }
                             Box {
-                                IconButton(onClick = { menuOpen = true }) {
+                                IconButton(onClick = { menuOpen = true }, enabled = !busy) {
                                     Icon(Icons.Default.MoreVert, "Document options", tint = FolqioPalette.muted)
                                 }
                                 DropdownMenu(
@@ -269,10 +272,12 @@ internal fun FolqioHome(
                                     onDismissRequest = { menuOpen = false }
                                 ) {
                                     DropdownMenuItem(
+                                        enabled = !busy,
                                         text = { Text(if (isFavorite(file.uri)) "Remove favorite" else "Add favorite") },
                                         onClick = { menuOpen = false; onFavorite(file.uri) }
                                     )
                                     DropdownMenuItem(
+                                        enabled = !busy,
                                         text = { Text("Rename") },
                                         onClick = {
                                             menuOpen = false
@@ -282,6 +287,7 @@ internal fun FolqioHome(
                                         }
                                     )
                                     DropdownMenuItem(
+                                        enabled = !busy,
                                         text = { Text("Remove") },
                                         onClick = { menuOpen = false; if (confirmRemoval) removing = file else onRemove(file) }
                                     )
@@ -297,8 +303,8 @@ internal fun FolqioHome(
 
 @Composable
 private fun QuickAction(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector,
-                        modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = modifier,
+                        modifier: Modifier = Modifier, onClick: () -> Unit, enabled: Boolean = true) {
+    Card(onClick = onClick, modifier = modifier, enabled = enabled,
         colors = CardDefaults.cardColors(containerColor = FolqioPalette.slate),
         shape = RoundedCornerShape(15.dp)) {
         Column(Modifier.fillMaxWidth().padding(vertical = 15.dp),
