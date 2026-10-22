@@ -51,7 +51,9 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
         )
-        incomingDocument.value = intent?.data?.takeIf { intent?.action == Intent.ACTION_VIEW }
+        incomingDocument.value = if (savedInstanceState == null) {
+            intent?.data?.takeIf { intent?.action == Intent.ACTION_VIEW }
+        } else null
         setContent { FolqioApp(incomingDocument.value) }
     }
 
@@ -75,7 +77,9 @@ private fun FolqioApp(initialUri: Uri?) {
     var zipResult by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     var recent by remember { mutableStateOf(library.recent()) }
-    var current by remember { mutableStateOf<LocalPdf?>(null) }
+    // Persist only the document URI; LocalPdf itself is not a Saveable value.
+    // The document is resolved from the durable library after rotation/process recreation.
+    var currentUri by rememberSaveable { mutableStateOf<String?>(null) }
     var importError by remember { mutableStateOf<String?>(null) }
     var creating by remember { mutableStateOf(false) }
     var importing by remember { mutableStateOf(false) }
@@ -97,7 +101,7 @@ private fun FolqioApp(initialUri: Uri?) {
                 }
                 library.add(file)
                 recent = library.recent()
-                current = file
+                currentUri = file.uri
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
@@ -144,7 +148,7 @@ private fun FolqioApp(initialUri: Uri?) {
                     val exported = withContext(Dispatchers.IO) {
                         PdfZipExport.export(context.applicationContext, selected, destination)
                     }
-                    zipResult = "$exported PDF documents added to your ZIP archive."
+                    zipResult = "${FolqioLanguages.text(language, "zipReady")} · $exported PDF"
                     importError = null
                 } catch (cancelled: CancellationException) {
                     throw cancelled
@@ -183,7 +187,7 @@ private fun FolqioApp(initialUri: Uri?) {
                         }
                         library.add(merged)
                         recent = library.recent()
-                        current = merged
+                        currentUri = merged.uri
                     } catch (cancelled: kotlinx.coroutines.CancellationException) {
                         throw cancelled
                     } catch (failure: Exception) {
@@ -209,7 +213,7 @@ private fun FolqioApp(initialUri: Uri?) {
         surface = FolqioPalette.slate, onSurface = FolqioPalette.pearl, surfaceVariant = FolqioPalette.slate
     )) {
         Surface(modifier = Modifier.fillMaxSize(), color = FolqioPalette.midnight) {
-            val file = current
+            val file = recent.firstOrNull { it.uri == currentUri }
             if (file == null) {
                 FolqioHome(
                     files = recent,
@@ -253,7 +257,7 @@ private fun FolqioApp(initialUri: Uri?) {
                     },
                     onPhoto = { imagePicker.launch("image/*") },
                     onMerge = { mergePicker.launch(arrayOf("application/pdf")) },
-                    onSelect = { current = it },
+                    onSelect = { currentUri = it.uri },
                     onRemove = { removed ->
                         if (library.remove(removed)) {
                             recent = library.recent()
@@ -272,17 +276,17 @@ private fun FolqioApp(initialUri: Uri?) {
                 )
             } else {
                 PdfReader(
-                    file = file, library = library, reopenLastPage = reopenLastPage, confirmRemoval = confirmRemoval, onBack = { current = null },
+                    file = file, library = library, reopenLastPage = reopenLastPage, confirmRemoval = confirmRemoval, onBack = { currentUri = null },
                     onRemove = {
                         if (library.remove(file)) {
                             recent = library.recent()
-                            current = null
+                            currentUri = null
                         }
                     },
                     onCreated = { newFile ->
                         library.add(newFile)
                         recent = library.recent()
-                        current = newFile
+                        currentUri = newFile.uri
                     }
                 )
             }
@@ -342,7 +346,9 @@ private fun PdfReader(file: LocalPdf, library: PdfLibrary, reopenLastPage: Boole
     var exporting by remember(file.uri) { mutableStateOf(false) }
     var exportError by remember(file.uri) { mutableStateOf<String?>(null) }
 
-    var page by remember(file.uri) { mutableIntStateOf(if (reopenLastPage) library.lastPage(file.uri) else 0) }
+    var page by rememberSaveable(file.uri) {
+        mutableIntStateOf(if (reopenLastPage) library.lastPage(file.uri) else 0)
+    }
 
     fun exportPage(rotate: Boolean) {
         scope.launch {
