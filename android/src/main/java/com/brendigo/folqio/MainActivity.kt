@@ -121,7 +121,7 @@ private fun FolqioApp(initialUri: Uri?) {
                 }
                 library.add(pdf)
                 recent = library.recent()
-                current = pdf
+                currentUri = pdf.uri
                 importError = null
             } catch (cancelled: CancellationException) {
                 throw cancelled
