@@ -43,7 +43,8 @@ import kotlin.math.roundToInt
 
 
 class MainActivity : ComponentActivity() {
-    private val incomingDocument = mutableStateOf<Uri?>(null)
+    private var nextIntentId = 0
+    private val incomingDocument = mutableStateOf<Pair<Uri, Int>?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +54,7 @@ class MainActivity : ComponentActivity() {
         )
         incomingDocument.value = if (savedInstanceState == null) {
             intent?.data?.takeIf { intent?.action == Intent.ACTION_VIEW }
+                ?.let { it to ++nextIntentId }
         } else null
         setContent { FolqioApp(incomingDocument.value) }
     }
@@ -60,12 +62,14 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        // A new ACTION_VIEW of the same URI is a new request, not an equal state value.
         incomingDocument.value = intent.data?.takeIf { intent.action == Intent.ACTION_VIEW }
+            ?.let { it to ++nextIntentId }
     }
 }
 
 @Composable
-private fun FolqioApp(initialUri: Uri?) {
+private fun FolqioApp(initialRequest: Pair<Uri, Int>?) {
     val context = LocalContext.current
     val library = remember { PdfLibrary(context.applicationContext) }
     val preferences = remember { FolqioPreferences(context.applicationContext) }
@@ -133,7 +137,7 @@ private fun FolqioApp(initialUri: Uri?) {
         }
     }
 
-    LaunchedEffect(initialUri) { initialUri?.let { open(it) } }
+    LaunchedEffect(initialRequest) { initialRequest?.first?.let { open(it) } }
 
     val zipPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
