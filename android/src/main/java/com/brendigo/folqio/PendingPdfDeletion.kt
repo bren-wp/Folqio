@@ -52,7 +52,7 @@ internal object PendingPdfDeletion {
             if (original.exists()) {
                 // A conflicting live file may contain different bytes. Do not
                 // silently destroy the staged copy: preserve both for recovery.
-                continue
+                return@forEach
             }
             if (filename in referencedNames) {
                 pending.renameTo(original)
