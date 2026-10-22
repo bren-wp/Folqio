@@ -79,7 +79,7 @@ internal fun PdfThumbnail(source: String) {
             )
         } else {
             Icon(Icons.Default.Description, contentDescription = null,
-                tint = ComposeColor(0xFF22D3A7))
+                tint = FolqioPalette.mint)
         }
     }
 }
