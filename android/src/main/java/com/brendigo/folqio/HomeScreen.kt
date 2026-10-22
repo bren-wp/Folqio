@@ -253,7 +253,7 @@ internal fun FolqioHome(
                     }
                 }
                 items(filtered, key = { it.uri }) { file ->
-                    Card(onClick = { onSelect(file) },
+                    Card(onClick = { onSelect(file) }, enabled = !busy,
                         colors = CardDefaults.cardColors(containerColor = FolqioPalette.slate),
                         shape = RoundedCornerShape(15.dp)) {
                         Row(Modifier.fillMaxWidth().padding(start = 14.dp, top = 8.dp,
@@ -264,7 +264,7 @@ internal fun FolqioHome(
                                 overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                             var menuOpen by remember(file.uri) { mutableStateOf(false) }
                             Box {
-                                IconButton(onClick = { menuOpen = true }) {
+                                IconButton(onClick = { menuOpen = true }, enabled = !busy) {
                                     Icon(Icons.Default.MoreVert, "Document options", tint = FolqioPalette.muted)
                                 }
                                 DropdownMenu(
@@ -272,10 +272,12 @@ internal fun FolqioHome(
                                     onDismissRequest = { menuOpen = false }
                                 ) {
                                     DropdownMenuItem(
+                                        enabled = !busy,
                                         text = { Text(if (isFavorite(file.uri)) "Remove favorite" else "Add favorite") },
                                         onClick = { menuOpen = false; onFavorite(file.uri) }
                                     )
                                     DropdownMenuItem(
+                                        enabled = !busy,
                                         text = { Text("Rename") },
                                         onClick = {
                                             menuOpen = false
@@ -285,6 +287,7 @@ internal fun FolqioHome(
                                         }
                                     )
                                     DropdownMenuItem(
+                                        enabled = !busy,
                                         text = { Text("Remove") },
                                         onClick = { menuOpen = false; if (confirmRemoval) removing = file else onRemove(file) }
                                     )
