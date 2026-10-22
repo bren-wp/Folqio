@@ -1,69 +1,34 @@
 <div align="center">
-  <img src="branding/folqio-symbol.svg" alt="Folqio document and checkmark emblem" width="132" />
-  <h1>FOLQIO</h1>
+  <img src="branding/folqio-symbol.svg" alt="Folqio logo" width="132" />
+  <h1>Folqio</h1>
   <p><strong>Your documents. Your device.</strong></p>
-  <p>Read, scan, organize, and share PDFs with a calm, beautifully focused workspace.</p>
-  <p>
-    <img alt="Android and iOS" src="https://img.shields.io/badge/Android_%26_iOS-0B1321?style=flat-square" />
-    <img alt="Offline first" src="https://img.shields.io/badge/Offline--first-22D3A7?style=flat-square&labelColor=0B1321" />
-    <img alt="No account required" src="https://img.shields.io/badge/No_account_required-1A2433?style=flat-square" />
-    <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-1A2433?style=flat-square" />
-  </p>
-  <p>
-    <a href="https://github.com/bren-wp/Folqio/releases">Get Folqio</a>
-    ·
-    <a href="docs/SECURITY.md">Privacy</a>
-    ·
-    <a href="docs/DESIGN_QA.md">Design principles</a>
-  </p>
+  <p>Offline-first PDF reader and document tools for Android, by Brendigo.</p>
 </div>
 
----
+## What Folqio currently does on Android
 
-## One beautiful place for your PDFs
+- Import selected PDF documents into private app storage, open and navigate pages, zoom and resume reading.
+- Organize documents with recent files, name search, favorites, bookmarks and display-name changes.
+- Create PDFs from photos selected with the Android system picker or captured using the system camera.
+- Merge two to five PDFs (up to 50 pages), and extract or rotate individual pages into **new, rasterized PDF copies**.
+- Save and share PDFs using Android system interfaces; export selected documents to a CRC-verified ZIP archive.
+- Choose from 25 language options for parts of the interface. Translation coverage remains incomplete.
+- Work without a Folqio account, document upload service, in-app advertisements or tracking SDK.
 
-Folqio puts your documents first. Its dark midnight-navy interface, carefully balanced mint highlights, and familiar tools make everyday PDF work feel simple.
+**Limitations:** Android merging/extraction/rotation flatten pages into images: selectable text, vector objects, forms, annotations and signatures may not survive. Folqio is **not** a secure-redaction tool. Offline OCR, modification of existing PDF text, lossless page editing, automatic edge detection and multipage camera scanning are **not currently supported**. Do not describe them as existing features in Google Play.
 
-| | |
-| --- | --- |
-| **📖 Read with ease** | Open PDFs with confidence, zoom comfortably, and pick up exactly where you left off. |
-| **📷 Capture documents** | Turn photos into PDFs. The iOS document camera supports multi-page scanning with automatic page detection. |
-| **📁 Stay organized** | Find documents by name, rename library labels, save favorites, and keep recent files close. |
-| **🧩 Work with pages** | Create multi-page PDFs, extract or rotate pages, and combine documents. Available page tools vary by platform. |
-| **✍️ Annotate with confidence** | On iOS, add text overlays, notes, and highlights as separate PDF copies while keeping your original intact. |
-| **🔎 Find what matters** | Search selectable PDF text and recognize scanned text on iOS with on-device OCR. |
-| **↗️ Share on your terms** | Export selected PDFs to a ZIP archive or share a document whenever you choose. |
-| **🌍 Choose your language** | 25 choices for navigation and settings, including Croatian. |
+## Actual Android screenshot
 
-## See Folqio in action
+![Actual Android home screen captured on an emulator](docs/media/android-home.png)
 
-<div align="center">
-  <img src="docs/media/android-home.png" alt="Real screenshot of the Folqio home screen running on an Android emulator" width="290" />
-  <p><sub>Actual Android app, captured on an emulator. No fabricated documents or simulated UI.</sub></p>
-</div>
+The screenshot is from a running emulator, not an illustration. Additional real-device screenshots and accessibility verification are outstanding.
 
-**Midnight navy · Slate · Mint.** Quiet surfaces, clear typography, comfortable controls, and a PDF page that stays the focus.
+## Privacy and distribution
 
-## Privacy is part of the experience
+Folqio stores imported and generated PDFs locally. It has no Android Internet, camera, or broad-storage app permission: Android system activities handle optional camera and file selection. Only user-directed exporting or sharing transfers documents to other apps.
 
-Folqio does not require a user account, run an advertising SDK, or send your PDF documents to a Folqio server. PDF processing happens locally with Android and Apple platform frameworks. iOS optical character recognition uses Apple's on-device Vision framework. Documents are shared through your device's system share sheet.
+Review the [privacy policy](docs/PRIVACY_POLICY.md), [security notes](docs/SECURITY.md), [Google Play submission gate](docs/STORE_READINESS.md), [build instructions](docs/BUILDING.md) and [roadmap](docs/ROADMAP.md).
 
-## Android and iOS
+The [GitHub releases](https://github.com/bren-wp/Folqio/releases) currently contain **development artifacts only**. A debug APK and an unsigned AAB must never be represented as production-ready Google Play binaries.
 
-Both editions share Folqio's visual identity but use the strengths of their respective platforms.
-
-**Android** brings a focused PDF reader, bookmarks, document library, photo-to-PDF creation, save/share, and page extraction, rotation, and merging as flattened copies.
-
-**iPhone and iPad** add PDFKit text search, free-text overlays, notes, and highlights saved to independent copies, multi-page document-camera scanning, on-device OCR, and page operations that retain PDF content without mutating loaded source documents. The photo picker decodes large images at bounded resolution to reduce memory pressure.
-
-**Please note:** Android's extracted, rotated, and merged PDF copies are rasterized. Those operations do not preserve searchable text, forms, or signatures and must not be treated as secure redaction. Text overlays are PDF annotations, not replacement of pre-existing PDF text; editing a signed PDF may invalidate signatures on the resulting copy. Some advanced PDF editing features remain on the roadmap.
-
-## Discover Folqio
-
-Explore the [latest downloads and release notes](https://github.com/bren-wp/Folqio/releases), learn about our [Privacy Policy](docs/PRIVACY_POLICY.md) and [Terms of Use](docs/TERMS_OF_USE.md), or see the [full feature roadmap](docs/ROADMAP.md).
-
-Built with care by **Brendigo**. Explore the release notes for the most up-to-date availability on each platform.
-
----
-
-<sub>Folqio is an independent open-source project released under the [MIT License](LICENSE).</sub>
+Folqio is an Android-only Kotlin / Jetpack Compose project by **Brendigo**, licensed under [MIT](LICENSE).

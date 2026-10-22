@@ -11,7 +11,7 @@ Keep a backup of important originals and review files after modification or expo
 
 ## Availability
 
-Certain features differ between Android and iOS and by operating-system version or device capability. No feature should be treated as a substitute for professional document verification. Software is supplied under the repository's [MIT license](../LICENSE), subject to applicable law.
+Features depend on the Android operating-system version, selected documents, and device capabilities. No feature should be treated as a substitute for professional document verification. Software is supplied under the repository's [MIT license](../LICENSE), subject to applicable law.
 
 ## Author
 

@@ -1,30 +1,25 @@
-# Folqio Privacy Policy
+# Folqio — Privacy Policy
 
-**Effective date:** October 13, 2026  
-**Author and publisher:** Brendigo  
-**Product:** Folqio for Android and iOS
+**Effective date:** October 22, 2026
+**Developer:** Brendigo
+**App:** Folqio for Android
 
-## Your documents stay in your control
+## Purpose and data processed
 
-Folqio is designed for reading, scanning, organizing and exporting PDF documents. The application does not require an account, display advertisements or upload your documents to a Folqio-operated server.
+Folqio is a PDF reader and local document utility. It lets you select PDF documents and photos, capture images with your device's system camera, organize library entries and create or export documents. PDF contents and photo contents are processed locally on your device by Folqio. Folqio does **not** operate an account service, serve ads, integrate a tracking SDK or upload your documents to a Folqio server.
 
-### What the app keeps
+When you import a PDF, Folqio copies it into the private app directory. New PDFs and temporary capture or ZIP files are also held locally. Folqio stores document names and references, recent history, favorites, bookmarks, reader position, language and settings on the device. These are not transmitted to a Folqio backend.
 
-- Imported or created PDFs are stored in app-managed storage on iOS; Android's system file picker provides selected-document access, and newly created PDFs are stored in the app's private directory.
-- Document names, favorites, bookmarks, last-read pages and language preferences are stored on the device.
-- When you choose ZIP export, Folqio reads the PDFs you select and prepares an archive. Saving or sharing is explicitly initiated by you.
-- iOS text recognition uses Apple's on-device Vision framework. Recognized text is not submitted to a Folqio document service.
+## External providers and sharing
 
-### Sharing and external services
+Android's system document/photo picker and external camera application are used only when you initiate those operations. The source or destination provider (for example a cloud drive or messaging application) may handle files according to its own privacy policy. When you explicitly export or share files, the receiving service may process that content outside Folqio. Google Play and Android may process their own distribution or system diagnostics independently.
 
-You decide when to share a PDF or ZIP. The destination, such as a cloud-drive or messaging app you choose in the system share sheet, may have separate privacy practices. Folqio cannot control those services or their retention policies. The device's operating system and app distribution store also maintain their own independent diagnostics or usage records.
+## Security, retention and deletion
 
-### Permissions and data removal
+App-managed PDFs and settings are stored in application-private Android storage. Folqio does not request broad storage, camera or internet permissions. You can remove a document from the Folqio library. Locally created or imported app-owned copies may be deleted; original documents in external provider locations remain unchanged. In rare interrupted-deletion conflicts, Folqio may retain a staged app-private copy to prevent accidental data loss. Uninstalling the app normally removes its app-private storage, subject to operating-system handling; copies manually exported to other applications or locations are not deleted by Folqio. Folqio disables backup and device transfer of its app data.
 
-Folqio uses system photo, camera, file-picker and share interfaces only for the features you choose. Android does not request broad storage or Internet permission. Files created by Folqio can be removed through the document library. Deleting the app removes its app-managed files subject to device and operating-system backup policies; exports you saved elsewhere remain under your control.
+## Contact and policy changes
 
-### Changes and contact
+Developer: **Brendigo**. Project and developer contact information: https://brendigo.com and https://github.com/bren-wp/Folqio. Updates will be published with new effective dates.
 
-Policy changes will be documented in the public Folqio repository. Project information and contact details: [Brendigo](https://brendigo.com).
-
-This policy describes Folqio's own app functionality. Distribution providers may request additional disclosures before publication.
+This policy describes the Android implementation. The final Google Play Data safety responses and public policy URL must be reviewed and maintained alongside any future app changes.

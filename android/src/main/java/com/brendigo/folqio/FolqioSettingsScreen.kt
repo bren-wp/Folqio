@@ -170,7 +170,7 @@ object FolqioLegalCopy {
         if (kind == "privacy") return if (hr) """
             POLITIKA PRIVATNOSTI — FOLQIO
             Autor: Brendigo
-            Ažurirano: 13. listopada 2026.
+            Ažurirano: 22. listopada 2026.
 
             Folqio obrađuje PDF dokumente na uređaju. Ne zahtijeva korisnički račun, ne sadrži oglase i ne šalje dokumente na Folqio poslužitelje.
 
@@ -179,7 +179,7 @@ object FolqioLegalCopy {
             Više o projektu: https://brendigo.com
         """.trimIndent() else """
             PRIVACY POLICY — FOLQIO
-            Created by Brendigo · Updated October 13, 2026.
+            Created by Brendigo · Updated October 22, 2026.
 
             Folqio processes PDF documents on your device. No account or advertising system is required, and documents are not sent to a Folqio server.
 
@@ -190,7 +190,7 @@ object FolqioLegalCopy {
 
         return if (hr) """
             UVJETI KORIŠTENJA — FOLQIO
-            Autor: Brendigo · Ažurirano: 13. listopada 2026.
+            Autor: Brendigo · Ažurirano: 22. listopada 2026.
 
             Folqio je namijenjen pregledu i obradi dokumenata koje imate pravo koristiti. Prije dijeljenja važnih datoteka provjerite rezultate i sačuvajte izvornike.
 
@@ -199,7 +199,7 @@ object FolqioLegalCopy {
             Projekt: https://brendigo.com
         """.trimIndent() else """
             TERMS OF USE — FOLQIO
-            Created by Brendigo · Updated October 13, 2026.
+            Created by Brendigo · Updated October 22, 2026.
 
             Use Folqio only with documents you have the right to access and process. Review results and retain originals when working with important files.
 

@@ -1,52 +1,39 @@
-# Folqio — App Store and Google Play release gate (October 2026)
+# Folqio — Google Play release gate (October 2026)
 
-This project is a **development preview**, not proof of approval from Google or Apple.
+**Scope: Android only.** This repository's development GitHub releases are not Google Play production submissions.
 
-## Android / Google Play
+## Source/build requirements
 
-- Google Play requires new Android phone apps and updates to target **API 36** from August 31, 2026. Folqio's target and compile SDK are 36.
-- Use a Play-compliant **Android App Bundle** (`.aab`) and enrollment in Google Play App Signing, with an upload key controlled outside the repository. The CI `bundleRelease` artifact is unsigned when no signing env vars are provided.
-- Never publish a debug-signed APK as a final release. Preserve and back up your upload keystore securely (outside GitHub).
-- For a **local signed release**, securely provide these environment variables to Gradle: `FOLQIO_KEYSTORE_PATH`, `FOLQIO_KEYSTORE_PASSWORD`, `FOLQIO_KEY_ALIAS`, `FOLQIO_KEY_PASSWORD`. Then run `gradle :android:bundleRelease` and verify the certificate/upload key fingerprint before submission.
-- Do not store keystores, export certificates, passwords, API keys, or private signing material in Git commits, CI logs, release assets or user-visible chat.
-- Verify foreground/background, edge-to-edge and predictive back, insets, document pickers, photo merge, revoked grants, large/malformed PDF handling on API 26 and 36 devices.
-- Complete Play Console Data safety, app content, privacy policy, accessibility, age rating, store listing, developer identity and content declarations. Keep descriptions restricted to implemented features.
-- An adaptive launcher icon is included; Play listing artwork (including a 512-pixel store icon) and accurate screenshots still require review. Visual 1:1 reference acceptance is still pending.
+- Android 16 (API 36) is required for new phone app submissions and updates from 31 August 2026; Folqio targets and compiles API 36.
+- Application ID must remain com.brendigo.folqio. Increase versionCode for every accepted Play update (0.1.13 uses code 14).
+- Pass Android JVM unit tests, source policy audit, Android lint, debug APK, release AAB, minification and resource shrinking.
+- Check final AAB/APK for unexpected merged permissions, tracker SDKs and native .so dependencies. If native libraries are present, verify 16 KB page-size compatibility.
+- Sign Play AAB with the correct **upload key**, enroll in Play App Signing, verify certificate fingerprint. Unsigned release AAB and debug APK are for development, not Play upload.
+- Never commit upload keystores, passwords or private signing material to the public repository.
 
-## Apple / App Store
+## Play Console / policy verification
 
-- As of April 28, 2026, App Store Connect uploads must be built with **Xcode 26+ and the iOS 26 SDK+**. The CI uses GitHub macOS 26.
-- The SwiftUI/PDFKit target supports iOS 16+, but deployment and build SDK are separate constraints.
-- Apple Development/Distribution signing requires the real Apple Developer team, provisioning profiles, app identifier and entitlement validation. `DEVELOPMENT_TEAM` is intentionally not committed.
-- `swift ios/generate_app_icon.swift` generates a 1024×1024 icon locally from the Folqio SVG concept. Validate that the generated **opaque** app icon meets Apple's asset rules; actual iPhone/iPad screenshots and visual comparisons remain missing.
-- Check every used required-reason API, bundled SDK and `PrivacyInfo.xcprivacy` declaration against the actual archive. Apple can reject invalid or incomplete manifests.
-- Provide age rating, updated app privacy answers, EU DSA trader status where relevant, store listing, support/privacy policy URLs, accessibility and TestFlight QA.
-- Test camera scanning and Files/Photos permissions on actual iPhones/iPads, including rotation, VoiceOver and Dynamic Type. Native CI requires booting a simulator and executing XCTest; a failed or unavailable simulator fails the CI gate.
+- Complete truthful app description and metadata; advertise only Android features proven in code. Folqio is currently a PDF reader with document-management and flattened/rasterized page tools. Do **not** advertise OCR, lossless editing, secure redaction or automatic multipage scanning.
+- Host the complete privacy policy at a public, active, non-geofenced, non-editable URL; add it to Play Console. In-app policy text exists, but hosting and Console linkage must be verified.
+- Complete Data safety based on the final packaged app, data access, sharing destinations and SDK dependencies. Do not infer a Play Console declaration from source alone.
+- Complete App content (ads, content rating, target audience, app access, legal disclosures), developer identity and any applicable country requirements in Play Console.
+- Use an accurate Folqio icon, screenshots of the **running Android app**, valid feature graphic, contact details and tested support links.
+- Test camera picker, photo picker, storage/full disk, file-provider grants, no-network use, API 26 and API 36, large PDFs, 16 KB devices if needed, TalkBack, larger fonts, screen rotation and background/foreground lifecycle.
+- Google reviews the uploaded bundle and Console declarations independently; no build script can guarantee approval.
 
-## Distribution sign-off
+## Distribution status
 
-- [ ] Android release bundle is signed with the correct upload key and verified
-- [ ] iOS archive is signed with Apple Distribution identity; TestFlight validation passed
-- [ ] Current native CI and device-farm integration tests are green
-- [ ] No malformed PDFs or images cause crashes in exercised fuzz tests
-- [ ] Every feature advertised on the listing is exercised end-to-end
-- [ ] Real-device visual screenshots meet Folqio reference UI acceptance
-- [ ] Icons, privacy policy, metadata, Data safety, privacy manifest and ratings reviewed
-- [ ] No secrets in repo, workflows, logs or public releases
+- [x] Kotlin/Compose Android app and targetSdk 36
+- [x] App-private FileProvider / minimal manifest permission design
+- [x] In-app privacy text and development release signing disclosures
+- [ ] Production AAB signed with verified upload key
+- [ ] Current CI fully green after latest changes
+- [ ] Public privacy policy URL verified and registered in Play Console
+- [ ] Final Data safety, target audience, content rating and store metadata reviewed
+- [ ] Physical-device + accessibility verification and Google Play review completed
 
-Sources: https://support.google.com/googleplay/android-developer/answer/11926878 and https://developer.apple.com/news/upcoming-requirements/
-
-### Apple required-reason APIs checked in v0.1.6
-
-The app's `PrivacyInfo.xcprivacy` now declares:
-- `NSPrivacyAccessedAPICategoryUserDefaults` with `CA92.1`, to save Folqio-only language and reader preferences.
-- `NSPrivacyAccessedAPICategoryFileTimestamp` with `C617.1`, to identify old ZIP archives in Folqio's temporary app directory.
-
-The declarations follow Apple's approved-reason descriptions:
-https://developer.apple.com/documentation/bundleresources/app-privacy-configuration/nsprivacyaccessedapitypes/nsprivacyaccessedapitype
-
-The archive and complete privacy report must still be reviewed at actual App Store submission time.
-
-### v0.1.8+ execution gate
-
-Native CI and release builds now require a bootable iPhone simulator and an executed XCTest suite rather than merely compiling test targets. The Android app builds with the existing API 36 target. Apple Xcode 26+ and SDK 26 requirements are checked in both workflows. This does not substitute for physical-device signoff or actual upload/provisioning.
+References:
+- https://support.google.com/googleplay/android-developer/answer/11926878
+- https://support.google.com/googleplay/android-developer/answer/10144311
+- https://support.google.com/googleplay/android-developer/answer/9898842
+- https://developer.android.com/guide/practices/page-sizes
