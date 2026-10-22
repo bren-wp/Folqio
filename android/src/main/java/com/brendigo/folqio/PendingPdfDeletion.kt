@@ -49,7 +49,12 @@ internal object PendingPdfDeletion {
             val filename = pending.name.removeSuffix(".pending-delete") + ".pdf"
             if (!isOwnedFileName(filename)) return@forEach
             val original = File(folder, filename)
-            if (filename in referencedNames && !original.exists()) {
+            if (original.exists()) {
+                // A conflicting live file may contain different bytes. Do not
+                // silently destroy the staged copy: preserve both for recovery.
+                continue
+            }
+            if (filename in referencedNames) {
                 pending.renameTo(original)
             } else {
                 pending.delete()
