@@ -22,3 +22,11 @@
 ## Release gate
 
 Pass Android JVM tests, source audit, lint, minified release AAB and manual device tests. Verify app behavior and publicly hosted privacy policy. Do not claim Google Play approval or professional lossless PDF editing until actually achieved.
+
+## v0.1.14 stability and audit
+
+- Android reader/library state restoration across device rotations and a separate identifier for each external ACTION_VIEW request.
+- Busy UI protection for primary document actions and ZIP export; shared palette tokens and localized ZIP confirmation.
+- Cross-source/test conservative dead-code advisory scan, resource-reference review and Python audit regression tests.
+- No speculative deletion of platform-registered or reflection-reachable symbols.
+- Pending: actual 1:1 screenshot comparisons on devices, full localization, Android OCR, lossless editing and signed Google Play publication.
