@@ -172,20 +172,26 @@ object FolqioLegalCopy {
             Autor: Brendigo
             Ažurirano: 22. listopada 2026.
 
-            Folqio obrađuje PDF dokumente na uređaju. Ne zahtijeva korisnički račun, ne sadrži oglase i ne šalje dokumente na Folqio poslužitelje.
+            Folqio obrađuje PDF dokumente i odabrane fotografije lokalno na Android uređaju. Ne zahtijeva račun, ne prikazuje oglase, ne sadrži sustav praćenja i ne šalje dokumente na Folqio poslužitelje.
 
-            Aplikacija sprema odabrane postavke i nedavne dokumente u privatnu pohranu uređaja. Izvoz u ZIP ili dijeljenje pokrećete sami. Vanjske usluge dijeljenja imaju vlastita pravila privatnosti.
+            U privatnu pohranu aplikacije spremaju se uvezeni ili izrađeni PDF-ovi, nazivi dokumenata, omiljene stavke, oznake stranica, posljednja otvorena stranica i postavke. Datoteke možete ukloniti iz biblioteke. U slučaju prekinutog brisanja privremena se kopija može sačuvati radi zaštite od gubitka podataka.
 
-            Više o projektu: https://brendigo.com
+            Sustavnu kameru i odabir datoteka koristite samo na vlastiti zahtjev. Izvoz i dijeljenje također pokrećete sami; odabrana vanjska usluga može obrađivati podijeljene datoteke prema svojim pravilima. Brisanje aplikacije u pravilu uklanja njezinu privatnu pohranu, ali ne i kopije koje ste izvezli drugdje.
+
+            Razvojni tim i kontakt: Brendigo · https://brendigo.com
+            Cjelovita politika: github.com/bren-wp/Folqio/blob/main/docs/PRIVACY_POLICY.md
         """.trimIndent() else """
             PRIVACY POLICY — FOLQIO
             Created by Brendigo · Updated October 22, 2026.
 
-            Folqio processes PDF documents on your device. No account or advertising system is required, and documents are not sent to a Folqio server.
+            Folqio processes PDF documents and selected photos locally on your Android device. No account, advertising or tracking system is required, and documents are not uploaded to a Folqio server.
 
-            Preferences and recently opened document references are stored within the app. ZIP exports and sharing occur only when you choose them. Third-party sharing destinations have their own privacy practices.
+            Imported and generated PDFs, document names, favorites, bookmarks, last page and preferences are saved in private app storage. You can remove documents from the library. After an interrupted deletion, a temporary copy may be retained to prevent data loss.
 
-            More information: https://brendigo.com
+            System camera and document selection operate when you request them. You choose when to export or share files; recipient services may process shared content under their own policies. Uninstalling normally removes Folqio's private data, but not files exported elsewhere.
+
+            Developer and contact: Brendigo · https://brendigo.com
+            Full privacy policy: github.com/bren-wp/Folqio/blob/main/docs/PRIVACY_POLICY.md
         """.trimIndent()
 
         return if (hr) """
