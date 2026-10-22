@@ -9,3 +9,11 @@ Check only real screens and controls: launch, home, recent files, document picke
 Advanced annotation/OCR/scanner/editor views described in old concept artwork are not currently implemented; never show dead buttons or describe them as running features.
 
 Screenshot automation lives in .github/workflows/visual-screenshot.yml and captures authentic emulator screenshots. Device-by-device visual parity has not been verified.
+
+## v0.1.14 Android interaction polish
+
+- Saveable tab, search query, opened document URI and page position preserve user context during activity recreation.
+- Quick action cards and ZIP export are explicitly disabled while asynchronous file operations run, with Material 3 disabled-state semantics.
+- PDF thumbnail placeholders use the same Folqio mint token as other UI controls instead of an independent literal.
+- Existing midnight/navy, slate and mint colors and brand mark remain unchanged.
+- Pixel-perfect acceptance remains **unverified** pending real device/emulator screenshots aligned with provided references on all target densities and font sizes.
